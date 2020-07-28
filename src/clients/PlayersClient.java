@@ -1,0 +1,256 @@
+package clients;
+
+import java.util.Scanner;
+
+import org.omg.CORBA.ORB;
+import org.omg.CORBA.ORBPackage.InvalidName;
+import org.omg.CosNaming.NameComponent;
+import org.omg.CosNaming.NamingContext;
+import org.omg.CosNaming.NamingContextHelper;
+import org.omg.CosNaming.NamingContextPackage.CannotProceed;
+import org.omg.CosNaming.NamingContextPackage.NotFound;
+
+import corbautils.GameServer;
+import corbautils.GameServerHelper;
+import exceptions.UnknownServerRegionException;
+
+public class PlayersClient extends CoreClient {
+
+	private static Scanner sc = new Scanner(System.in);
+	private static GameServer serverStub; 
+	private static String[] CLIENT_ORB_ARGS;
+	
+	
+	public static void main(String[] args) {
+		final String[] defaultORBArgs = { "-ORBInitialPort", "1050" };
+		CLIENT_ORB_ARGS = args.length == 0 ? defaultORBArgs : args;
+		
+		final String MENU_STRING = "\n-- Player Client CLI --\n"
+				+ "Pick an option ...\n"
+				+ "1. Create a Player account\n"
+				+ "2. Sign a Player in\n"
+				+ "3. Sign a Player out\n"
+				+ "4. Transfer Player account\n"
+				+ "5. Exit the CLI\n"
+				+ "--------------------------\n";
+		try {
+			System.out.println("NOTE -- Player Logs available at " + System.getProperty("user.dir") + "/player_logs/");
+			System.out.println("Seeded Accounts -- \"whiteallen7\" , "
+					+ "\"billy20\" , \"petula71\" -- "
+					+ "Password for all these accounts is \"password\"");
+			while(true) {
+				System.out.println(MENU_STRING);
+				switch(sc.nextLine()) {
+					case "1": {
+						createPlayerAccount();
+						break;
+					}
+					case "2": {
+						playerSignIn();
+						break;
+					}
+					case "3": {
+						playerSignOut();
+						break;
+					}
+					case "4": {
+						playerTransferAccount();
+						break;
+					}
+					case "5": {
+						System.out.println("Goodbye!");
+						System.exit(0);
+					}
+					default: {
+						System.out.println("Invalid Option selected!");
+					}
+				}
+			}
+		} catch (Exception e) {
+			System.out.println(e);
+		}
+	}
+	
+	private static void setRegionORB(String regionString) throws UnknownServerRegionException, InvalidName, NotFound, CannotProceed, org.omg.CosNaming.NamingContextPackage.InvalidName {
+		if(regionString.equals("Unknown Server")) throw new UnknownServerRegionException();
+		
+	    // create and initialize the ORB
+	    ORB orb = ORB.init(CLIENT_ORB_ARGS, null);
+ 
+        // get the root naming context
+        org.omg.CORBA.Object objRef = orb.resolve_initial_references("NameService");
+        NamingContext ncRef = NamingContextHelper.narrow(objRef);
+
+        // resolve the Object Reference in Naming
+        NameComponent nc = new NameComponent(regionString, "");
+        NameComponent path[] = {nc};
+        serverStub = GameServerHelper.narrow(ncRef.resolve(path));
+	}
+
+	private static void createPlayerAccount() {
+		String fName;
+		String lName;
+		String uName;
+		String password;
+		String ipAddress;
+		int age;
+		
+		setLoggingContext("UNRESOLVED_PLAYER", "UnresolvedIP");
+		fName = getSafeStringInput("Enter First Name:");
+		lName = getSafeStringInput("Enter Last Name:");
+		uName = getSafeStringInput("Enter User Name:");
+		password = getSafeStringInput("Enter Password:");
+		age = getSafeIntInput("Enter Age:");
+		
+		System.out.println("Enter IP Address:");
+		ipAddress = getIpAddressInput();
+		
+		try {
+			realizeCreatePlayerAccount(fName, lName, uName, password, age, ipAddress);
+		} catch(InvalidName | NotFound | CannotProceed | org.omg.CosNaming.NamingContextPackage.InvalidName e) {
+			String err = "ERROR: CORBA services encountered an error";
+			System.out.println(err);
+			playerLog(err, uName, ipAddress);
+		} catch (org.omg.CORBA.SystemException e) {
+			handleServerDown(uName, ipAddress, e);
+		}
+	}
+		
+	private static void playerSignIn() {
+		String uName;
+		String password;
+		String ipAddress;
+		
+		setLoggingContext("UNRESOLVED_PLAYER", "UnresolvedIP");
+		uName = getSafeStringInput("Enter User Name:");
+		password = getSafeStringInput("Enter Password:");
+		System.out.println("Enter IP Address:");
+		ipAddress = getIpAddressInput();
+		try {
+			realizePlayerSignIn(uName, password, ipAddress);
+		} catch(InvalidName | NotFound | CannotProceed | org.omg.CosNaming.NamingContextPackage.InvalidName e) {
+			String err = "ERROR: CORBA services encountered an error";
+			System.out.println(err);
+			playerLog(err, uName, ipAddress);
+		} catch (org.omg.CORBA.SystemException e) {
+			handleServerDown(uName, ipAddress, e);
+		}
+
+	}
+	
+	private static void playerSignOut() {
+		String uName;
+		String ipAddress;
+		
+		setLoggingContext("UNRESOLVED_PLAYER", "UnresolvedIP");
+		uName = getSafeStringInput("Enter User Name:");
+		System.out.println("Enter IP Address:");
+		ipAddress = getIpAddressInput();
+		try {
+			realizePlayerSignOut(uName, ipAddress);
+		} catch(InvalidName | NotFound | CannotProceed | org.omg.CosNaming.NamingContextPackage.InvalidName e) {
+			String err = "ERROR: CORBA services encountered an error";
+			System.out.println(err);
+			playerLog(err, uName, ipAddress);
+		} catch (org.omg.CORBA.SystemException e) {
+			handleServerDown(uName, ipAddress, e);
+		}
+
+	}
+	
+	private static void playerTransferAccount() {
+		String uName;
+		String password;
+		String oldIpAddress;
+		String newIpAddress = "";
+		
+		setLoggingContext("UNRESOLVED_PLAYER", "UnresolvedIP");
+		uName = getSafeStringInput("Enter User Name:");
+		password = getSafeStringInput("Enter Password:");
+		System.out.println("Enter old IP Address:");
+		oldIpAddress = getIpAddressInput();
+		System.out.println("Enter new IP Address:");
+		do {
+			System.out.println("NOTE: Ensure that the region of the IP Address to Transfer is different from your current region!");
+			newIpAddress = getIpAddressInput();
+		} while(newIpAddress.startsWith(oldIpAddress.substring(0,3)));
+		
+		try {
+			realizePlayerTransferAccount(uName, password, oldIpAddress, newIpAddress);
+		} catch(InvalidName | NotFound | CannotProceed | org.omg.CosNaming.NamingContextPackage.InvalidName e) {
+			String err = "ERROR: CORBA services encountered an error";
+			System.out.println(err);
+			playerLog(err, uName, oldIpAddress);
+		} catch (org.omg.CORBA.SystemException e) {
+			handleServerDown(uName, oldIpAddress, e);
+		}
+
+	}
+	
+	private static void realizePlayerTransferAccount(String uName, String password, String oldIpAddress,
+			String newIpAddress) throws InvalidName, NotFound, CannotProceed, org.omg.CosNaming.NamingContextPackage.InvalidName {
+		String regionString = getRegionServer(oldIpAddress);
+		try {
+			setRegionORB(regionString);
+			
+			String retStatement = serverStub.transferAccount(uName, password, oldIpAddress, newIpAddress);
+			System.out.println(retStatement);
+			playerLog(retStatement, uName, oldIpAddress);
+		} catch(UnknownServerRegionException e) {
+			String log = "The server for which the ORB is to be created is unknown";
+			playerLog(log, uName, oldIpAddress);
+		}
+		
+	}
+
+	private static void realizeCreatePlayerAccount(String fName, String lName, String uName, String password, int age, String ipAddress) throws InvalidName, NotFound, CannotProceed, org.omg.CosNaming.NamingContextPackage.InvalidName {
+		String regionString = getRegionServer(ipAddress);
+		try {
+			setRegionORB(regionString);
+			
+			String retStatement = serverStub.createPlayerAccount(fName, lName, uName, password, ipAddress, age);
+			System.out.println(retStatement);
+			playerLog(retStatement, uName, ipAddress);
+		} catch(UnknownServerRegionException e) {
+			String log = "The server for which the ORB is to be created is unknown";
+			playerLog(log, uName, ipAddress);
+		}
+	}
+	
+	private static void realizePlayerSignIn(String uName, String password, String ipAddress) throws InvalidName, NotFound, CannotProceed, org.omg.CosNaming.NamingContextPackage.InvalidName {
+		try {
+			String regionString = getRegionServer(ipAddress);
+			
+			setRegionORB(regionString);
+			
+			String retStatement = serverStub.playerSignIn(uName, password, ipAddress);
+			System.out.println(retStatement);
+			playerLog(retStatement, uName, ipAddress);
+		} catch(UnknownServerRegionException e) {
+			String log = "The server for which the ORB is to be created is unknown";
+			playerLog(log, uName, ipAddress);
+		}
+	}
+
+	private static void realizePlayerSignOut(String uName, String ipAddress) throws InvalidName, NotFound, CannotProceed, org.omg.CosNaming.NamingContextPackage.InvalidName {
+		try {
+			String regionString = getRegionServer(ipAddress);
+			
+			setRegionORB(regionString);
+			
+			String retStatement = serverStub.playerSignOut(uName, ipAddress);
+			System.out.println(retStatement);
+			playerLog(retStatement, uName, ipAddress);
+		} catch(UnknownServerRegionException e) {
+			String log = "The server for which the ORB is to be created is unknown";
+			playerLog(log, uName, ipAddress);
+		}
+	}
+	
+	private static void handleServerDown(String uName, String ipAddress, Exception e) {
+		String err = "ERROR: Region server is not active";
+		System.out.println(err);
+		playerLog(err, uName, ipAddress);
+	}
+
+}
