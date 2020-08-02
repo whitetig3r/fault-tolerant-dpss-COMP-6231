@@ -6,24 +6,21 @@ import java.net.*;
 class ReplicaManager 
 {
 
-	private static int replicaAcounter = 0 , replicaBCounter = 0;
+	private static int replicaOnecounter = 0 , replicaTwoCounter = 0;
 
 	private static DatagramSocket aSocket = null;
 	private static boolean waitForConnection = true;
-	private static String serverIPAddress;
 	static int IPaddress = 0;
 	static int serverPort;
 	static String dataRecieved = null;
 	static String [] messageArray;
 	static int parserPosition = 0;
 	
-	private static final int UDP_PORT_REPLICA_A = 2000;
-	private static final int UDP_PORT_REPLICA_B = 3000;
+	private static final int UDP_PORT_REPLICA_ONE = 2000;
+	private static final int UDP_PORT_REPLICA_TWO = 3000;
 	private static final int UDP_PORT_REPLICA_LEAD = 4000;
 	private static final int UDP_PORT_REPLICA_MANAGER = 5000;
-	private static final int UDP_PORT_FE = 6000;
 	private static int UDP_BUFFER_SIZE = 65535;
-	private final static String FE_NAME = "FE";
 	private final static String RM_NAME = "RM"; 
 	private final static String RA_NAME = "RA";
 	private final static String RB_NAME = "RB";
@@ -46,8 +43,8 @@ class ReplicaManager
 	{
 		//Initialize the system by sending 3 UDP messages to 3 server groups
 		startServerGroup(UDP_PORT_REPLICA_LEAD);
-		startServerGroup(UDP_PORT_REPLICA_A);
-		startServerGroup(UDP_PORT_REPLICA_B);
+		startServerGroup(UDP_PORT_REPLICA_ONE);
+		startServerGroup(UDP_PORT_REPLICA_TWO);
 
 		System.out.println ("Replica Manager sent request to run all servers!");
 		startServerListener(UDP_PORT_REPLICA_MANAGER);
@@ -85,20 +82,20 @@ class ReplicaManager
 					//check the message from the Replica A
 					if (messageArray[1].contains(RA_NAME)) 
 					{
-						replicaAcounter ++;
-						if(replicaAcounter >= 3) 
+						replicaOnecounter ++;
+						if(replicaOnecounter >= 3) 
 						{
-							replicaAcounter = 0;
-							stopServer(UDP_PORT_REPLICA_A);
+							replicaOnecounter = 0;
+							stopServer(UDP_PORT_REPLICA_ONE);
 						}
 					} //check the message from the Replica B
 					else if (messageArray[1].contains(RB_NAME)) 
 					{
-						replicaBCounter ++;
-						if(replicaBCounter >= 3) 
+						replicaTwoCounter ++;
+						if(replicaTwoCounter >= 3) 
 						{
-							replicaBCounter = 0;
-							stopServer(UDP_PORT_REPLICA_B);
+							replicaTwoCounter = 0;
+							stopServer(UDP_PORT_REPLICA_TWO);
 						}
 					}
 				}
