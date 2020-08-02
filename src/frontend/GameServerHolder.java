@@ -1,4 +1,4 @@
-package corbautils;
+package frontend;
 
 /**
 * CoreGameServerIDL/GameServerHolder.java .
@@ -9,30 +9,30 @@ package corbautils;
 
 public final class GameServerHolder implements org.omg.CORBA.portable.Streamable
 {
-  public corbautils.GameServer value = null;
+  public frontend.GameServer value = null;
 
   public GameServerHolder ()
   {
   }
 
-  public GameServerHolder (corbautils.GameServer initialValue)
+  public GameServerHolder (frontend.GameServer initialValue)
   {
     value = initialValue;
   }
 
   public void _read (org.omg.CORBA.portable.InputStream i)
   {
-    value = corbautils.GameServerHelper.read (i);
+    value = frontend.GameServerHelper.read (i);
   }
 
   public void _write (org.omg.CORBA.portable.OutputStream o)
   {
-    corbautils.GameServerHelper.write (o, value);
+    frontend.GameServerHelper.write (o, value);
   }
 
   public org.omg.CORBA.TypeCode _type ()
   {
-    return corbautils.GameServerHelper.type ();
+    return frontend.GameServerHelper.type ();
   }
 
 }

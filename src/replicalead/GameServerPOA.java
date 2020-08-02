@@ -1,4 +1,4 @@
-package corbautils;
+package replicalead;
 
 
 /**
@@ -9,7 +9,7 @@ package corbautils;
 */
 
 public abstract class GameServerPOA extends org.omg.PortableServer.Servant
- implements corbautils.GameServerOperations, org.omg.CORBA.portable.InvokeHandler
+ implements replicalead.GameServerOperations, org.omg.CORBA.portable.InvokeHandler
 {
 
   // Constructors

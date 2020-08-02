@@ -1,4 +1,4 @@
-package servers;
+package replicalead;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -31,12 +31,12 @@ import java.util.stream.Stream;
 
 import org.omg.CORBA.ORB;
 
-import corbautils.GameServerPOA;
 import exceptions.BadPasswordException;
 import exceptions.BadUserNameException;
 import exceptions.PlayerRemoveException;
 import exceptions.TransferAccountException;
 import exceptions.UnknownServerRegionException;
+import frontend.GameServerPOA;
 import models.Player;
 
 public class GameServerServant extends GameServerPOA {

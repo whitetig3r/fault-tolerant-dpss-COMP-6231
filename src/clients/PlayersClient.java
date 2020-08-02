@@ -10,9 +10,9 @@ import org.omg.CosNaming.NamingContextHelper;
 import org.omg.CosNaming.NamingContextPackage.CannotProceed;
 import org.omg.CosNaming.NamingContextPackage.NotFound;
 
-import corbautils.GameServer;
-import corbautils.GameServerHelper;
 import exceptions.UnknownServerRegionException;
+import frontend.GameServer;
+import frontend.GameServerHelper;
 
 public class PlayersClient extends CoreClient {
 
