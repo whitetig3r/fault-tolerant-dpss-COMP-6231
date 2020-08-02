@@ -3,7 +3,7 @@ package replicamanager;
 import java.io.*;
 import java.net.*;
 
-class ReplicaManager 
+public class ReplicaManager 
 {
 
 	private static int replicaOnecounter = 0 , replicaTwoCounter = 0;

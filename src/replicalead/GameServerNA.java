@@ -1,5 +1,7 @@
 package replicalead;
 
+import java.io.PrintWriter;
+
 import org.omg.CORBA.ORB;
 import org.omg.CosNaming.NameComponent;
 import org.omg.CosNaming.NamingContextExt;
@@ -22,6 +24,13 @@ public class GameServerNA {
 		      gameServer.setORB(orb); 
 	
 		      org.omg.CORBA.Object ref = rootpoa.servant_to_reference(gameServer);
+		
+		      String ior = orb.object_to_string(ref);
+		      System.out.println(ior);
+				
+		      PrintWriter file = new PrintWriter("ior_NorthAmerica.txt");
+		      file.println(ior);
+		      file.close();
 		      GameServer href = GameServerHelper.narrow(ref);
 		          
 		      // get the root naming context
