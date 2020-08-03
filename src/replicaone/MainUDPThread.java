@@ -12,7 +12,7 @@ import java.util.logging.Logger;
 
 import org.omg.CORBA.ORB;
 
-class MainUDPThread extends Thread
+class ReplicaManagerListenUDPThread extends Thread
 {
 	private int aPort;
 	private boolean bCrashed;
@@ -38,7 +38,7 @@ class MainUDPThread extends Thread
 		  RESTART_REPLICA
 	}
 	
-	protected MainUDPThread(int pPort) throws SocketException
+	protected ReplicaManagerListenUDPThread(int pPort) throws SocketException
 	{
 		aPort = pPort;
 		bCrashed = false;
@@ -95,7 +95,7 @@ class MainUDPThread extends Thread
 	}
 }
 
-class ReplicaOneUDPThread extends Thread
+class MainUDPThread extends Thread
 {
 	
 	private final String UDP_PARSER = "/";
@@ -112,8 +112,8 @@ class ReplicaOneUDPThread extends Thread
 		  ADMIN_SUSPEND_PLAYER_ACCOUNT,
 		  RESTART_REPLICA
 	}
-	private static ReplicaOneUDPThread replicaOne;
-	protected Logger aLog;
+	private static MainUDPThread replicaOne;
+	//protected Logger aLog;
 	private GameServer aInterfaceIDL;
 	private GameServerServant aNAGameServer;
 	private GameServerServant aEUGameServer;
@@ -131,7 +131,7 @@ class ReplicaOneUDPThread extends Thread
 	private DatagramPacket replyToLeaderPacket;
 	private String data;
 	// For receiving from replica manager UDP
-	protected MainUDPThread replicaManagerListener;
+	protected ReplicaManagerListenUDPThread replicaManagerListener;
 	
 	protected static int UDP_PORT_REPLICA_A = 2000;
 	
@@ -155,7 +155,8 @@ class ReplicaOneUDPThread extends Thread
 	// Main method which runs the UDP thread for replica A
 	public static void main(String[] args) 
 	{
-		replicaOne = new ReplicaOneUDPThread(UDP_PORT_REPLICA_A, args);
+		String[] defaultArgs = {};
+		replicaOne = new MainUDPThread(UDP_PORT_REPLICA_A, defaultArgs);
 		while (true)
 		{
 			if(replicaOne.replicaManagerListener.shouldRestart())
@@ -166,32 +167,33 @@ class ReplicaOneUDPThread extends Thread
 			}
 			if(replicaOne.replicaManagerListener.hasCrashed())
 			{
-				replicaOne.aLog.info("Crash detected in ReplicaA Replica Manager UDP Thread, restarting UDP");
+				//replicaOne.aLog.info("Crash detected in ReplicaA Replica Manager UDP Thread, restarting UDP");
 				try {
-					replicaOne.replicaManagerListener = new MainUDPThread(UDP_PORT_REPLICA_A);
+					replicaOne.replicaManagerListener = new ReplicaManagerListenUDPThread(UDP_PORT_REPLICA_A);
 				} catch (SocketException e) {
-					replicaOne.aLog.info("ReplicaA Replica Manager creating failed");
+					//replicaOne.aLog.info("ReplicaA Replica Manager creating failed");
 				}
 				replicaOne.replicaManagerListener.start();
 			}
 		}
 	}
 	
-	private ReplicaOneUDPThread(int pPort, String[] pArgs)
+	private MainUDPThread(int pPort, String[] pArgs)
 	{
 		buffer = new byte [UDP_BUFFER_SIZE];
 		try {
 			aMulticastSocket = new MulticastSocket(UDP_PORT_REPLICA_LEAD_MULTICAST);
 			aMulticastSocket.joinGroup(InetAddress.getByName(UDP_ADDR_REPLICA_COMMUNICATION_MULTICAST));
 			aSendSocket = new DatagramSocket();
-			replicaManagerListener = new MainUDPThread(UDP_PORT_REPLICA_A);
+			replicaManagerListener = new ReplicaManagerListenUDPThread(UDP_PORT_REPLICA_A);
+			// Start the UDP communication for replica A
+			System.out.println("UDP Running");
+			replicaManagerListener.start();
+			start();
 		} catch (IOException e) {
-			aLog.info("UDP Socket creation failed");
+			e.printStackTrace();
+			System.out.println("UDP Socket creation failed");
 		}
-		// Start the UDP communication for replica A
-		aLog.info("UDP Running");
-		replicaManagerListener.start();
-		start();
 	}
 	
 	/* sets the interfaceIDL reference based on the Geo location in the given pIPAddress 
@@ -215,7 +217,7 @@ class ReplicaOneUDPThread extends Thread
 		}
 		else
 		{
-			aLog.info("Invalid GeoLocation");
+			System.out.println("Invalid GeoLocation");
 			return false;
 		}
 		String stringORB = bufferedReader.readLine();
@@ -251,7 +253,7 @@ class ReplicaOneUDPThread extends Thread
 		}
 		catch(Exception e)
 		{
-			aLog.info("Error starting the servers: " + e.getMessage());
+			System.out.println("Error starting the servers: " + e.getMessage());
 			return false;
 		}
 		return true;
@@ -271,11 +273,11 @@ class ReplicaOneUDPThread extends Thread
 			aNAGameServer = null;
 			aEUGameServer = null;
 			aASGameServer = null;
-			aLog.info("Stopped All Servers");
+			System.out.println("Stopped All Servers");
 		}
 		catch(Exception e)
 		{
-			aLog.info("Error stopping the servers: " + e.getMessage());
+			System.out.println("Error stopping the servers: " + e.getMessage());
 			return false;
 		}
 		return true;
@@ -300,7 +302,7 @@ class ReplicaOneUDPThread extends Thread
 			if(messageArray[0].equals(LR_NAME))
 			{
 				messageArray[1] = messageArray[1].trim();
-				aLog.info("Recieived request from replica leader : " + messageArray[1]);
+				System.out.println("Recieived request from replica leader : " + messageArray[1]);
 				if(messageArray[1].equals(ACTION_TO_PERFORM.PLAYER_CREATE_ACCOUNT.name()))
 				{
 					messageArray[7] = messageArray[7].trim();
@@ -376,19 +378,19 @@ class ReplicaOneUDPThread extends Thread
 				buffer = data.getBytes();
 				replyToLeaderPacket = new DatagramPacket(buffer, data.length(),  InetAddress.getByName("localhost"), UDP_PORT_REPLICA_LEAD);
 				aSendSocket.send(replyToLeaderPacket);
-				aLog.info("Sent back results to replica leader : " + data.toString());
+				System.out.println("Sent back results to replica leader : " + data.toString());
 				data = "";
 			}
 		}
 		catch (IOException e)
 		{
-			aLog.info("UDP crashed, closing UDP Socket");
+			System.out.println("UDP crashed, closing UDP Socket");
 			aSendSocket.close();
-			aLog.info("UDP crashed, creating new UDP Socket");
+			System.out.println("UDP crashed, creating new UDP Socket");
 			try {
 				aSendSocket = new DatagramSocket();
 			} catch (SocketException e1) {
-				aLog.info("UDP Socket creation failed");
+				System.out.println("UDP Socket creation failed");
 			}
 		}
 	}

@@ -57,6 +57,12 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
 		udpThread.start();
 	}
 	
+	public static void main(String[] args) 
+	{
+		final String[] defaultORBArgs = { "-ORBInitialPort", "1050" };
+		new Thread(new GameServerFrontEnd(defaultORBArgs)).start();
+	}
+	
 	public GameServerFrontEnd() {
 		// TODO Auto-generated constructor stub
 	}
