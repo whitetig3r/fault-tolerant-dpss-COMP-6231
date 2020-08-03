@@ -17,7 +17,7 @@ public class GameServerFEThread extends Thread {
 	{
 		this.port = port;
 		threadDown = false;
-		buffer = new byte [65535];
+		buffer = new byte [25000];
 		try {
 			dgSocket = new DatagramSocket(port);
 		} catch (SocketException e) {

@@ -1,6 +1,7 @@
 package frontend;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -70,11 +71,11 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
 	@Override
 	public void run() 
 	{
+		System.out.println("Starting FE Core Thread");
 		List<Object> tmpList;
 		while(true)
 		{
-			if(!fifoQueue.isEmpty()) // Process requests one at a time
-			{
+			if(!fifoQueue.isEmpty()) {
 				tmpList = fifoQueue.remove();
 				sendRequestToReplicaLeader(tmpList);
 			}
@@ -83,6 +84,12 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
 			{
 				udpThread = new GameServerFEThread(UDP_PORT_FRONTEND);
 				udpThread.start();
+			}
+			
+			try {
+				Thread.sleep(200);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
 		}
 	}
@@ -101,6 +108,9 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
 	
 		      org.omg.CORBA.Object ref = rootpoa.id_to_reference(objectId);
 		      String stringifiedORB = orb.object_to_string(ref);
+			  PrintWriter file = new PrintWriter("FE" + "_IOR.txt");
+			  file.print(stringifiedORB);
+			  file.close();
 		          
 		      rootpoa.the_POAManager().activate();
 		} catch (Exception e) {
@@ -113,7 +123,6 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
 	private void sendRequestToReplicaLeader(List <Object> requestArgs)
 	{	
 		ACTION_TO_PERFORM actionToPerform = (ACTION_TO_PERFORM)requestArgs.get(0);
-		
 		switch(actionToPerform) {
 			case PLAYER_CREATE_ACCOUNT:;
 			case PLAYER_SIGN_IN:

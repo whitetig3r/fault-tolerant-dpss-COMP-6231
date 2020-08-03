@@ -1,16 +1,15 @@
 package clients;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.Scanner;
 
 import org.omg.CORBA.ORB;
 import org.omg.CORBA.ORBPackage.InvalidName;
-import org.omg.CosNaming.NameComponent;
-import org.omg.CosNaming.NamingContext;
-import org.omg.CosNaming.NamingContextHelper;
 import org.omg.CosNaming.NamingContextPackage.CannotProceed;
 import org.omg.CosNaming.NamingContextPackage.NotFound;
 
-import exceptions.UnknownServerRegionException;
 import frontend.GameServer;
 import frontend.GameServerHelper;
 
@@ -21,9 +20,10 @@ public class PlayersClient extends CoreClient {
 	private static String[] CLIENT_ORB_ARGS;
 	
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InvalidName, NotFound, CannotProceed, org.omg.CosNaming.NamingContextPackage.InvalidName {
 		final String[] defaultORBArgs = { "-ORBInitialPort", "1050" };
 		CLIENT_ORB_ARGS = args.length == 0 ? defaultORBArgs : args;
+		setFEORB();
 		
 		final String MENU_STRING = "\n-- Player Client CLI --\n"
 				+ "Pick an option ...\n"
@@ -71,20 +71,23 @@ public class PlayersClient extends CoreClient {
 		}
 	}
 	
-	private static void setRegionORB(String regionString) throws UnknownServerRegionException, InvalidName, NotFound, CannotProceed, org.omg.CosNaming.NamingContextPackage.InvalidName {
-		if(regionString.equals("Unknown Server")) throw new UnknownServerRegionException();
-		
+	private static void setFEORB() throws InvalidName, NotFound, CannotProceed, org.omg.CosNaming.NamingContextPackage.InvalidName {
 	    // create and initialize the ORB
 	    ORB orb = ORB.init(CLIENT_ORB_ARGS, null);
- 
-        // get the root naming context
-        org.omg.CORBA.Object objRef = orb.resolve_initial_references("NameService");
-        NamingContext ncRef = NamingContextHelper.narrow(objRef);
-
-        // resolve the Object Reference in Naming
-        NameComponent nc = new NameComponent(regionString, "");
-        NameComponent path[] = {nc};
-        serverStub = GameServerHelper.narrow(ncRef.resolve(path));
+		String stringORB = "";
+		
+		try {
+		    BufferedReader bufferedReader = new BufferedReader(new FileReader("FE" + "_IOR.txt"));
+			stringORB = bufferedReader.readLine();
+			bufferedReader.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		org.omg.CORBA.Object reference_CORBA = orb.string_to_object(stringORB);
+		serverStub = GameServerHelper.narrow(reference_CORBA);
+		System.out.println("HERE " + serverStub);
 	}
 
 	private static void createPlayerAccount() {
@@ -189,62 +192,28 @@ public class PlayersClient extends CoreClient {
 	
 	private static void realizePlayerTransferAccount(String uName, String password, String oldIpAddress,
 			String newIpAddress) throws InvalidName, NotFound, CannotProceed, org.omg.CosNaming.NamingContextPackage.InvalidName {
-		String regionString = getRegionServer(oldIpAddress);
-		try {
-			setRegionORB(regionString);
-			
-			String retStatement = serverStub.transferAccount(uName, password, oldIpAddress, newIpAddress);
-			System.out.println(retStatement);
-			playerLog(retStatement, uName, oldIpAddress);
-		} catch(UnknownServerRegionException e) {
-			String log = "The server for which the ORB is to be created is unknown";
-			playerLog(log, uName, oldIpAddress);
-		}
+		String retStatement = serverStub.transferAccount(uName, password, oldIpAddress, newIpAddress);
+		System.out.println(retStatement);
+		playerLog(retStatement, uName, oldIpAddress);
 		
 	}
 
-	private static void realizeCreatePlayerAccount(String fName, String lName, String uName, String password, int age, String ipAddress) throws InvalidName, NotFound, CannotProceed, org.omg.CosNaming.NamingContextPackage.InvalidName {
-		String regionString = getRegionServer(ipAddress);
-		try {
-			setRegionORB(regionString);
-			
-			String retStatement = serverStub.createPlayerAccount(fName, lName, uName, password, ipAddress, age);
-			System.out.println(retStatement);
-			playerLog(retStatement, uName, ipAddress);
-		} catch(UnknownServerRegionException e) {
-			String log = "The server for which the ORB is to be created is unknown";
-			playerLog(log, uName, ipAddress);
-		}
+	private static void realizeCreatePlayerAccount(String fName, String lName, String uName, String password, int age, String ipAddress) throws InvalidName, NotFound, CannotProceed, org.omg.CosNaming.NamingContextPackage.InvalidName { 
+		String retStatement = serverStub.createPlayerAccount(fName, lName, uName, password, ipAddress, age);
+		System.out.println(retStatement);
+		playerLog(retStatement, uName, ipAddress);	
 	}
 	
 	private static void realizePlayerSignIn(String uName, String password, String ipAddress) throws InvalidName, NotFound, CannotProceed, org.omg.CosNaming.NamingContextPackage.InvalidName {
-		try {
-			String regionString = getRegionServer(ipAddress);
-			
-			setRegionORB(regionString);
-			
-			String retStatement = serverStub.playerSignIn(uName, password, ipAddress);
-			System.out.println(retStatement);
-			playerLog(retStatement, uName, ipAddress);
-		} catch(UnknownServerRegionException e) {
-			String log = "The server for which the ORB is to be created is unknown";
-			playerLog(log, uName, ipAddress);
-		}
+		String retStatement = serverStub.playerSignIn(uName, password, ipAddress);
+		System.out.println(retStatement);
+		playerLog(retStatement, uName, ipAddress);
 	}
 
 	private static void realizePlayerSignOut(String uName, String ipAddress) throws InvalidName, NotFound, CannotProceed, org.omg.CosNaming.NamingContextPackage.InvalidName {
-		try {
-			String regionString = getRegionServer(ipAddress);
-			
-			setRegionORB(regionString);
-			
-			String retStatement = serverStub.playerSignOut(uName, ipAddress);
-			System.out.println(retStatement);
-			playerLog(retStatement, uName, ipAddress);
-		} catch(UnknownServerRegionException e) {
-			String log = "The server for which the ORB is to be created is unknown";
-			playerLog(log, uName, ipAddress);
-		}
+		String retStatement = serverStub.playerSignOut(uName, ipAddress);
+		System.out.println(retStatement);
+		playerLog(retStatement, uName, ipAddress);
 	}
 	
 	private static void handleServerDown(String uName, String ipAddress, Exception e) {

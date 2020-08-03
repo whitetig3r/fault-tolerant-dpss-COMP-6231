@@ -1,12 +1,12 @@
 package clients;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.Scanner;
 
 import org.omg.CORBA.ORB;
 import org.omg.CORBA.ORBPackage.InvalidName;
-import org.omg.CosNaming.NameComponent;
-import org.omg.CosNaming.NamingContext;
-import org.omg.CosNaming.NamingContextHelper;
 import org.omg.CosNaming.NamingContextPackage.CannotProceed;
 import org.omg.CosNaming.NamingContextPackage.NotFound;
 
@@ -21,9 +21,10 @@ public class AdministratorsClient extends CoreClient {
 	private static String[] CLIENT_ORB_ARGS;
 	
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InvalidName, NotFound, CannotProceed, org.omg.CosNaming.NamingContextPackage.InvalidName {
 		final String[] defaultORBArgs = { "-ORBInitialPort", "1050" };
 		CLIENT_ORB_ARGS = args.length == 0 ? defaultORBArgs : args;
+		setFEORB();
 		System.out.println("NOTE -- Admin Logs available at " + System.getProperty("user.dir") + "/admin_logs");
 		final String MENU_STRING = "\n-- Admin Client CLI --\n"
 				+ "Pick an option ...\n"
@@ -171,54 +172,43 @@ public class AdministratorsClient extends CoreClient {
 
 	}
 
-	private static void setRegionORB(String regionString) throws UnknownServerRegionException, InvalidName, NotFound, CannotProceed, org.omg.CosNaming.NamingContextPackage.InvalidName {
-		if(regionString.equals("Unknown Server")) throw new UnknownServerRegionException();
-		
+	private static void setFEORB() throws InvalidName, NotFound, CannotProceed, org.omg.CosNaming.NamingContextPackage.InvalidName {
 	    // create and initialize the ORB
 	    ORB orb = ORB.init(CLIENT_ORB_ARGS, null);
- 
-        // get the root naming context
-        org.omg.CORBA.Object objRef = orb.resolve_initial_references("NameService");
-        NamingContext ncRef = NamingContextHelper.narrow(objRef);
-
-        // resolve the Object Reference in Naming
-        NameComponent nc = new NameComponent(regionString, "");
-        NameComponent path[] = {nc};
-        serverStub = GameServerHelper.narrow(ncRef.resolve(path));
+		String stringORB = "";
+		
+		try {
+		    BufferedReader bufferedReader = new BufferedReader(new FileReader("FE" + "_IOR.txt"));
+			stringORB = bufferedReader.readLine();
+			bufferedReader.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		org.omg.CORBA.Object reference_CORBA = orb.string_to_object(stringORB);
+		serverStub = GameServerHelper.narrow(reference_CORBA);
 	}
 
 	private static void realizeAdminSignIn(String uName, String password, String ipAddress) throws InvalidName, NotFound, CannotProceed, org.omg.CosNaming.NamingContextPackage.InvalidName, UnknownServerRegionException {
-		String regionString = getRegionServer(ipAddress);
-		setRegionORB(regionString);
-		
 		String retStatement = serverStub.adminSignIn(uName, password, ipAddress);
 		System.out.println(retStatement);
 		adminLog(retStatement, uName, getRegionServer(ipAddress));
 	}
 	
 	private static void realizeAdminSignOut(String uName, String ipAddress) throws InvalidName, NotFound, CannotProceed, org.omg.CosNaming.NamingContextPackage.InvalidName, UnknownServerRegionException{
-		String regionString = getRegionServer(ipAddress);
-		setRegionORB(regionString);
-		
 		String retStatement = serverStub.adminSignOut(uName, ipAddress);
 		System.out.println(retStatement);
 		adminLog(retStatement, uName, getRegionServer(ipAddress));
 	}
 	
 	private static void realizeAdminGetPlayerStatus(String uName, String password, String ipAddress) throws InvalidName, NotFound, CannotProceed, org.omg.CosNaming.NamingContextPackage.InvalidName, UnknownServerRegionException {
-		String regionString = getRegionServer(ipAddress);
-		setRegionORB(regionString);
-		
 		String retStatement = serverStub.getPlayerStatus(uName, password, ipAddress);
 		System.out.println(retStatement);
 		adminLog(retStatement, uName, getRegionServer(ipAddress));
-
 	}
 	
 	private static void realizeSuspendAccount(String uName, String password, String ipAddress, String uNameToSuspend) throws InvalidName, NotFound, CannotProceed, org.omg.CosNaming.NamingContextPackage.InvalidName, UnknownServerRegionException {
-		String regionString = getRegionServer(ipAddress);
-		setRegionORB(regionString);
-		
 		String retStatement = serverStub.suspendAccount(uName, password, ipAddress, uNameToSuspend);
 		System.out.println(retStatement);
 		adminLog(retStatement, uName, getRegionServer(ipAddress));

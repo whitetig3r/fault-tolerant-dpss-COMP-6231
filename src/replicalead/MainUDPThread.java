@@ -16,7 +16,7 @@ public class MainUDPThread extends Thread {
 	private static final String UDP_ADDR_REPLICA_COMMUNICATION_MULTICAST = "224.0.0.2";
 	
 	private static final String UDP_PARSER = "/";
-	private static final int UDP_BUFFER_SIZE = 65535;
+	private static final int UDP_BUFFER_SIZE = 25000;
 	private static final String LR_NAME = "LR";
 	
 	private String m_UDPDataGram_from_stripped;
@@ -46,6 +46,7 @@ public class MainUDPThread extends Thread {
   				
   				if(l_result != null)
   				{
+  					System.out.println(l_result);
   					String l_senderName = parseSenderName(l_result);
   					if(l_senderName != null)
   					{

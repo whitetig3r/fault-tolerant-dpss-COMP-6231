@@ -23,7 +23,7 @@ class ReplicaManagerListenUDPThread extends Thread
 	private String [] messageArray;
 	
 	private final String UDP_PARSER = "/";
-	private int UDP_BUFFER_SIZE = 65535;
+	private int UDP_BUFFER_SIZE = 25000;
 	private static final String RM_NAME = "RM";
 
 	private enum ACTION_TO_PERFORM {
@@ -99,7 +99,7 @@ class MainUDPThread extends Thread
 {
 	
 	private final String UDP_PARSER = "/";
-	private int UDP_BUFFER_SIZE = 65535;
+	private int UDP_BUFFER_SIZE = 25000;
 
 	private enum ACTION_TO_PERFORM {
 		  PLAYER_CREATE_ACCOUNT,
