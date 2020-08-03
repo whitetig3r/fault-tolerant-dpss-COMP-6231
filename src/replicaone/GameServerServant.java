@@ -39,10 +39,12 @@ import exceptions.UnknownServerRegionException;
 import frontend.GameServerPOA;
 import models.Player;
 
-public class GameServerServant extends GameServerPOA {
+public class GameServerServant extends GameServerPOA implements Runnable {
 	private final ArrayList<Integer> EXT_UDP_PORTS = new ArrayList<>(Arrays.asList(6789,6790,6791));
 	private int INT_UDP_PORT;
 	private final int SERVER_TIMEOUT_IN_MILLIS = 5000;
+	private boolean hasCrashed = false;
+	private DatagramSocket aSocket = null;
 	
 	// INSTANCE-WIDE TRANSACTIONAL LOCKS
 	private final WriteLock playerHashTransactionLock = new ReentrantReadWriteLock().writeLock();
@@ -60,7 +62,21 @@ public class GameServerServant extends GameServerPOA {
 		createPlayerAccount("Admin","Admin","Admin","Admin", getRegionDefaultIP(), 0);
 		seedDataStore();
 		setExternalPorts();
-		runRegionUdpServer();
+	}
+	
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+		if(hasCrashed) {
+			// LOG THE RESTART
+			runRegionUdpServer();
+		}
+		
+	}
+	
+	protected void freeServerResources() {
+		playerHash.clear();
+		if(aSocket != null) aSocket.close();
 	}
 	
 	// CORE PLAYER FUNCTIONALITY
@@ -76,7 +92,7 @@ public class GameServerServant extends GameServerPOA {
 		serverLog("Initiating CREATEACCOUNT for player", ipAddress);
 		
 		Character uNameFirstChar = uName.charAt(0);
-		String retString = "An Error was encountered!";
+		String retString = "ERR: An Error was encountered!";
 		
 		if(!this.playerHash.containsKey(uNameFirstChar)) {
 			this.playerHash.putIfAbsent(uNameFirstChar, new CopyOnWriteArrayList<Player>());
@@ -91,7 +107,7 @@ public class GameServerServant extends GameServerPOA {
 						.stream().filter(player -> player.getuName().equals(uName)).findAny();
 				
 				if(playerExists.isPresent()) {
-					retString = "Player with that username already exists!";
+					retString = "ERR: Player with that username already exists!";
 				} else {
 					this.playerHash.get(uNameFirstChar).addIfAbsent(playerToAdd);
 					retString = String.format("Successfully created account for player with username -- '%s'", uName);
@@ -114,7 +130,7 @@ public class GameServerServant extends GameServerPOA {
 		Character uNameFirstChar = uName.charAt(0);
 		
 		if(!this.playerHash.containsKey(uNameFirstChar)) {
-			String errExist = String.format("Player with username '%s' does not exist", uName);
+			String errExist = String.format("ERR: Player with username '%s' does not exist", uName);
 			serverLog(errExist, ipAddress);
 			return errExist;
 		}
@@ -128,7 +144,7 @@ public class GameServerServant extends GameServerPOA {
 				playerToSignIn.acquireLock(); // LOCK
 				
 				if(playerToSignIn.getStatus()) {
-					String errSignedIn = String.format("Player '%s' is already signed in", uName); 
+					String errSignedIn = String.format("ERR: Player '%s' is already signed in", uName); 
 					serverLog(errSignedIn, ipAddress);
 					return errSignedIn;
 				} else {
@@ -144,7 +160,7 @@ public class GameServerServant extends GameServerPOA {
 				playerToSignIn.releaseLock(); // UNLOCK
 		}
 		
-		String errExist = String.format("Player with username '%s' and that password combination does not exist", uName);
+		String errExist = String.format("ERR: Player with username '%s' and that password combination does not exist", uName);
 		serverLog(errExist, ipAddress);
 		return errExist;
 	}
@@ -156,7 +172,7 @@ public class GameServerServant extends GameServerPOA {
 		Character uNameFirstChar = uName.charAt(0);
 		
 		if(!this.playerHash.containsKey(uNameFirstChar)) {
-			String errExist = String.format("Player with username '%s' does not exist", uName);
+			String errExist = String.format("ERR: Player with username '%s' does not exist", uName);
 			serverLog(errExist, ipAddress);
 			return errExist;
 		}
@@ -170,7 +186,7 @@ public class GameServerServant extends GameServerPOA {
 				playerToSignOut.acquireLock(); // LOCK
 				
 				if(!(playerToSignOut.getStatus())) {
-					String errSignedOut = String.format("Player '%s' is already signed out", uName);
+					String errSignedOut = String.format("ERR: Player '%s' is already signed out", uName);
 					serverLog(errSignedOut, ipAddress);
 					return errSignedOut;
 				} else {
@@ -186,7 +202,7 @@ public class GameServerServant extends GameServerPOA {
 				playerToSignOut.releaseLock(); // UNLOCK
 		}
 		
-		String errExist = String.format("Player with username '%s' and that password combination does not exist", uName);
+		String errExist = String.format("ERR: Player with username '%s' and that password combination does not exist", uName);
 		serverLog(errExist, ipAddress);
 		return errExist;
 	}
@@ -198,7 +214,7 @@ public class GameServerServant extends GameServerPOA {
 		Character uNameFirstChar = uName.charAt(0);
 		
 		if(!this.playerHash.containsKey(uNameFirstChar)) {
-			String errExist = String.format("Player with username '%s' does not exist", uName);
+			String errExist = String.format("ERR: Player with username '%s' does not exist", uName);
 			serverLog(errExist, oldIpAddress);
 			return errExist;
 		}
@@ -234,11 +250,11 @@ public class GameServerServant extends GameServerPOA {
 						}
 						
 					} catch(PlayerRemoveException e) {
-						String err = String.format("Failed to delete player with username -- %s because account does not exist. Aborting TRANSFER!", uName);
+						String err = String.format("ERR: Failed to delete player with username -- %s because account does not exist. Aborting TRANSFER!", uName);
 						serverLog(err, oldIpAddress);
 						return err;
 					} catch(TransferAccountException e) {
-						String err = String.format("Failed to add player account with username %s on remote server. ROLLING BACK!", uName);
+						String err = String.format("ERR: Failed to add player account with username %s on remote server. ROLLING BACK!", uName);
 						playerToTransfer.setIpAddress(oldIpAddress);
 						if(wasOnline) playerToTransfer.setStatus(true);
 						threadSafeAddPlayerBack(playerToTransfer, uNameFirstChar);
@@ -251,7 +267,7 @@ public class GameServerServant extends GameServerPOA {
 					playerToTransfer.releaseLock(); // UNLOCK
 			}
 		
-		String errExist = String.format("Player with username '%s' and that password combination does not exist", uName);
+		String errExist = String.format("ERR: Player with username '%s' and that password combination does not exist", uName);
 		serverLog(errExist, oldIpAddress);
 		return errExist;
 	}
@@ -277,7 +293,7 @@ public class GameServerServant extends GameServerPOA {
 					adminToSignIn.acquireLock(); // LOCK
 					
 					if(adminToSignIn.getStatus()) {
-						String errSignedIn = "Admin is already signed in"; 
+						String errSignedIn = "ERR: Admin is already signed in"; 
 						serverLog(errSignedIn, ipAddress);
 						return errSignedIn;
 					} else {
@@ -295,7 +311,7 @@ public class GameServerServant extends GameServerPOA {
 				
 		}
 		
-		String errExist = "Admin with that password combination does not exist";
+		String errExist = "ERR: Admin with that password combination does not exist";
 		serverLog(errExist, ipAddress);
 		return errExist;
 	}
@@ -315,7 +331,7 @@ public class GameServerServant extends GameServerPOA {
 				if(adminToSignOut != null) {
 					adminToSignOut.acquireLock(); // LOCK
 					if(!(adminToSignOut.getStatus())) {
-						String errSignedOut = "Admin is already signed out";
+						String errSignedOut = "ERR: Admin is already signed out";
 						serverLog(errSignedOut, ipAddress);
 						return errSignedOut;
 					} else {
@@ -332,17 +348,17 @@ public class GameServerServant extends GameServerPOA {
 			}
 		}
 		
-		String errExist = "Admin with that password combination does not exist";
+		String errExist = "ERR: Admin with that password combination does not exist";
 		serverLog(errExist, ipAddress);
 		return errExist;
 	}
 	
 	@Override
 	public String getPlayerStatus(String uName, String password, String ipAddress) {
-		String retStatement = "Unrecognized Error while requesting player status!";
+		String retStatement = "ERR: Unrecognized Error while requesting player status!";
 		
 		if(!(uName.equals("Admin") && password.equals("Admin"))) {
-			retStatement = "Incorrect credentials for Admin!";
+			retStatement = "ERR: Incorrect credentials for Admin!";
 		} else {
 		
 			Player admin = this.playerHash.get('A').stream().filter(player -> {
@@ -380,7 +396,7 @@ public class GameServerServant extends GameServerPOA {
 					try {
 						threadSafeRemovePlayer(playerToSuspend, firstCharOfPlayer);
 					} catch(PlayerRemoveException e) {
-						String err = String.format("Failed to delete player account with username %s..", uNameToSuspend);
+						String err = String.format("ERR: Failed to delete player account with username %s..", uNameToSuspend);
 						serverLog(err, "Admin");
 						return err;
 					}
@@ -389,7 +405,7 @@ public class GameServerServant extends GameServerPOA {
 					return success;
 				} 
 				else {
-					String noSuchPlayer = String.format("Failed to find player account with username -- %s", uNameToSuspend);
+					String noSuchPlayer = String.format("ERR: Failed to find player account with username -- %s", uNameToSuspend);
 					serverLog(noSuchPlayer, ipAddress);
 					return noSuchPlayer;
 				}
@@ -399,7 +415,7 @@ public class GameServerServant extends GameServerPOA {
 			}
 		}
 		
-		String errExist = "Admin with that password combination does not exist";
+		String errExist = "ERR: Admin with that password combination does not exist";
 		serverLog(errExist, ipAddress);
 		return errExist;
 	}
@@ -435,7 +451,7 @@ public class GameServerServant extends GameServerPOA {
 		    String err = e.getMessage();
 		    serverLog(err, ipAddress);
 	    }
-	    String err = "ERROR Could not retrieve player statuses!";
+	    String err = "ERR: Could not retrieve player statuses!";
 	    serverLog(err, ipAddress);
 	    return err;
 	}
@@ -513,7 +529,6 @@ public class GameServerServant extends GameServerPOA {
 	
 	private void listenForServerRequests() {
 		// UDP server awaiting requests from other game servers
-		DatagramSocket aSocket = null;
 		String loggingEntity = "Admin";
 		try{
 	    	aSocket = new DatagramSocket(INT_UDP_PORT);
@@ -539,12 +554,15 @@ public class GameServerServant extends GameServerPOA {
     			aSocket.send(reply);
     		}
 		} catch (SocketException e){
+			hasCrashed = true;
 			System.out.println("Socket Exception: " + e.getMessage());
 			serverLog(e.getMessage(), loggingEntity);
 		} catch (IOException e) {
+			hasCrashed = true;
 			System.out.println("IO Exception: " + e.getMessage());
 			serverLog(e.getMessage(), loggingEntity);
 		} catch (TransferAccountException e) {
+			hasCrashed = true;
 			System.out.println("Transfer Account Exception: " + e.getMessage());
 			serverLog(e.getMessage(), loggingEntity);
 		} finally {
@@ -596,15 +614,15 @@ public class GameServerServant extends GameServerPOA {
 			serverLog(succ, "Admin");
 			return succ;
 		} catch (SocketTimeoutException e) {
-			String timeOut = String.format("Request to server on port %d has timed out!", serverPort);
+			String timeOut = String.format("ERR: Request to server on port %d has timed out!", serverPort);
 			serverLog(timeOut, "Admin");
 			return timeOut;
 		} catch (SocketException e){
 			serverLog(e.getMessage(), "Admin");
-			return "Socket Exception: " + e.getMessage();
+			return "ERR: " + e.getMessage();
 		} catch (IOException e) {
 			serverLog(e.getMessage(), "Admin");
-			return "IO Exception: " + e.getMessage();
+			return "ERR: " + e.getMessage();
 		} finally {
 			if(aSocket != null) aSocket.close();
 		}
@@ -627,7 +645,7 @@ public class GameServerServant extends GameServerPOA {
 			serverLog(succ, playerUsername);
 			return succ;
 		} catch (SocketTimeoutException e) {
-			String timeOut = String.format("Request to server on port %d has timed out!", serverPort);
+			String timeOut = String.format("ERR: Request to server on port %d has timed out!", serverPort);
 			serverLog(timeOut, playerUsername);
 			return timeOut;
 		} catch (SocketException e){

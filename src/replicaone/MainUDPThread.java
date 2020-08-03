@@ -115,9 +115,9 @@ class ReplicaOneUDPThread extends Thread
 	private static ReplicaOneUDPThread replicaOne;
 	protected Logger aLog;
 	private GameServer aInterfaceIDL;
-	private GameServer aNAGameServer;
-	private GameServer aEUGameServer;
-	private GameServer aASGameServer;
+	private GameServerServant aNAGameServer;
+	private GameServerServant aEUGameServer;
+	private GameServerServant aASGameServer;
 	private Thread aNAThread;
 	private Thread aEUThread;
 	private Thread aASThread;
@@ -134,9 +134,6 @@ class ReplicaOneUDPThread extends Thread
 	protected MainUDPThread replicaManagerListener;
 	
 	protected static int UDP_PORT_REPLICA_A = 2000;
-	protected static int UDP_PORT_REPLICA_A_NA = 2100;
-	protected static int UDP_PORT_REPLICA_A_EU = 2200;
-	protected static int UDP_PORT_REPLICA_A_AS = 2300;	
 	
 	protected static String RM_NAME = "RM";
 	protected static String LR_NAME = "LR";
@@ -182,7 +179,6 @@ class ReplicaOneUDPThread extends Thread
 	
 	private ReplicaOneUDPThread(int pPort, String[] pArgs)
 	{
-		aLog = Log.createLog("ReplicaA_UDP");
 		buffer = new byte [UDP_BUFFER_SIZE];
 		try {
 			aMulticastSocket = new MulticastSocket(UDP_PORT_REPLICA_LEAD_MULTICAST);
@@ -241,20 +237,17 @@ class ReplicaOneUDPThread extends Thread
 		try
 		{
 			// Create Game Servers within each thread
-			aNAGameServer = new GameServerServant(RA_NA_NAME, new String [1], UDP_PORT_REPLICA_A_NA);
-			aEUGameServer = new GameServerServant(RA_EU_NAME, new String [1], UDP_PORT_REPLICA_A_EU);
-			aASGameServer = new GameServerServant(RA_AS_NAME, new String [1], UDP_PORT_REPLICA_A_AS);
+			aNAGameServer = new GameServerServant(RA_NA_NAME);
+			aEUGameServer = new GameServerServant(RA_EU_NAME);
+			aASGameServer = new GameServerServant(RA_AS_NAME);
 			
 			// Start the Threads running each runnable Game Server
 			aNAThread = new Thread(aNAGameServer);
 			aEUThread = new Thread(aEUGameServer);
 			aASThread = new Thread(aASGameServer);
 			aNAThread.start();
-			aLog.info(aNAGameServer.getName() + " Server Running");
 			aEUThread.start();
-			aLog.info(aEUGameServer.getName() + " Server Running");
 			aASThread.start();
-			aLog.info(aASGameServer.getName() + " Server Running");
 		}
 		catch(Exception e)
 		{
@@ -312,8 +305,8 @@ class ReplicaOneUDPThread extends Thread
 				{
 					messageArray[7] = messageArray[7].trim();
 					setORBreference(messageArray[7]);
-					if(aInterfaceIDL.createPlayerAccount(messageArray[2], messageArray[3], Integer.parseInt(messageArray[4]),
-														 messageArray[5], messageArray[6], messageArray[7]))
+					if(aInterfaceIDL.createPlayerAccount(messageArray[2], messageArray[3], messageArray[7],
+														 messageArray[5], messageArray[6], Integer.parseInt(messageArray[4])).startsWith("ERR"))
 						data = RA_NAME + UDP_PARSER + "1" + UDP_PARSER + UDP_END_PARSE;
 					else
 						data = RA_NAME + UDP_PARSER + "0" + UDP_PARSER + UDP_END_PARSE;
@@ -322,7 +315,7 @@ class ReplicaOneUDPThread extends Thread
 				{
 					messageArray[4] = messageArray[4].trim();
 					setORBreference(messageArray[4]);
-					if(aInterfaceIDL.playerSignIn(messageArray[2], messageArray[3], messageArray[4]))
+					if(aInterfaceIDL.playerSignIn(messageArray[2], messageArray[3], messageArray[4]).startsWith("ERR"))
 						data = RA_NAME + UDP_PARSER + "1" + UDP_PARSER + UDP_END_PARSE;
 					else
 						data = RA_NAME + UDP_PARSER + "0" + UDP_PARSER + UDP_END_PARSE;
@@ -331,7 +324,7 @@ class ReplicaOneUDPThread extends Thread
 				{
 					messageArray[3] = messageArray[3].trim();
 					setORBreference(messageArray[3]);
-					if(aInterfaceIDL.playerSignOut(messageArray[2], messageArray[3]))
+					if(aInterfaceIDL.playerSignOut(messageArray[2], messageArray[3]).startsWith("ERR"))
 						data = RA_NAME + UDP_PARSER + "1" + UDP_PARSER + UDP_END_PARSE;
 					else
 						data = RA_NAME + UDP_PARSER + "0" + UDP_PARSER + UDP_END_PARSE;
@@ -340,7 +333,7 @@ class ReplicaOneUDPThread extends Thread
 				{
 					messageArray[4] = messageArray[4].trim();
 					setORBreference(messageArray[4]);
-					if(aInterfaceIDL.adminSignIn(messageArray[2], messageArray[3], messageArray[4]))
+					if(aInterfaceIDL.adminSignIn(messageArray[2], messageArray[3], messageArray[4]).startsWith("ERR"))
 						data = RA_NAME + UDP_PARSER + "1" + UDP_PARSER + UDP_END_PARSE;
 					else
 						data = RA_NAME + UDP_PARSER + "0" + UDP_PARSER + UDP_END_PARSE;
@@ -349,7 +342,7 @@ class ReplicaOneUDPThread extends Thread
 				{
 					messageArray[3] = messageArray[3].trim();
 					setORBreference(messageArray[3]);
-					if(aInterfaceIDL.adminSignOut(messageArray[2], messageArray[3]))
+					if(aInterfaceIDL.adminSignOut(messageArray[2], messageArray[3]).startsWith("ERR"))
 						data = RA_NAME + UDP_PARSER + "1" + UDP_PARSER + UDP_END_PARSE;
 					else
 						data = RA_NAME + UDP_PARSER + "0" + UDP_PARSER + UDP_END_PARSE;
@@ -358,7 +351,7 @@ class ReplicaOneUDPThread extends Thread
 				{
 					messageArray[5] = messageArray[5].trim();
 					setORBreference(messageArray[4]);
-					if(aInterfaceIDL.transferAccount(messageArray[2], messageArray[3], messageArray[4], messageArray[5]))
+					if(aInterfaceIDL.transferAccount(messageArray[2], messageArray[3], messageArray[4], messageArray[5]).startsWith("ERR"))
 						data = RA_NAME + UDP_PARSER + "1" + UDP_PARSER + UDP_END_PARSE;
 					else
 						data = RA_NAME + UDP_PARSER + "0" + UDP_PARSER + UDP_END_PARSE;
@@ -367,7 +360,7 @@ class ReplicaOneUDPThread extends Thread
 				{
 					messageArray[5] = messageArray[5].trim();
 					setORBreference(messageArray[4]);
-					if(aInterfaceIDL.suspendAccount(messageArray[2], messageArray[3], messageArray[4], messageArray[5]))
+					if(aInterfaceIDL.suspendAccount(messageArray[2], messageArray[3], messageArray[4], messageArray[5]).startsWith("ERR"))
 						data = RA_NAME + UDP_PARSER + "1" + UDP_PARSER + UDP_END_PARSE;
 					else
 						data = RA_NAME + UDP_PARSER + "0" + UDP_PARSER + UDP_END_PARSE;

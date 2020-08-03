@@ -290,11 +290,14 @@ public class RequestProcessor {
 			
 			if(l_ParamArray[0].substring(0, 15).equals("RESTART_REPLICA"))
 			{
+				System.out.println("Starting Replica LEAD");
 				// Creating Instances of Local Servers - North America, Europe and Asia
 				GameServerNA l_GameServer_NorthAmerica = new GameServerNA();
 				GameServerAS l_GameServer_Asia = new GameServerAS();
 				GameServerEU l_GameServer_Europe = new GameServerEU();
-				
+				l_GameServer_NorthAmerica.start();
+				l_GameServer_Asia.start();
+				l_GameServer_Europe.start();
 			}
 		}
 }

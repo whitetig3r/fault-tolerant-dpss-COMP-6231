@@ -9,12 +9,11 @@ import org.omg.CosNaming.NamingContextExtHelper;
 import org.omg.PortableServer.POA;
 import org.omg.PortableServer.POAHelper;
 
-public class GameServerAS {
-	public static void main(String[] args) {
+public class GameServerAS extends Thread {
+	public void run() {
 		try{
 			  final String[] defaultORBArgs = { "-ORBInitialPort", "1050" };
-			  args = args.length == 0 ? defaultORBArgs : args;
-		      ORB orb = ORB.init(args, null);
+		      ORB orb = ORB.init(defaultORBArgs, null);
 	
 		      POA rootpoa = POAHelper.narrow(orb.resolve_initial_references("RootPOA"));
 		      rootpoa.the_POAManager().activate();

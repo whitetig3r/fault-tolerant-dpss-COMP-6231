@@ -9,13 +9,12 @@ import org.omg.CosNaming.NamingContextExtHelper;
 import org.omg.PortableServer.POA;
 import org.omg.PortableServer.POAHelper;
 
-public class GameServerNA {
+public class GameServerNA extends Thread {
 
-	public static void main(String[] args) {
+	public void run() {
 		try{
 			  final String[] defaultORBArgs = { "-ORBInitialPort", "1050" };
-			  args = args.length == 0 ? defaultORBArgs : args;
-		      ORB orb = ORB.init(args, null);
+		      ORB orb = ORB.init(defaultORBArgs, null);
 	
 		      POA rootpoa = POAHelper.narrow(orb.resolve_initial_references("RootPOA"));
 		      rootpoa.the_POAManager().activate();
@@ -43,7 +42,6 @@ public class GameServerNA {
 		      ncRef.rebind(path, href);
 	
 		      System.out.println("GameServer NA ready and waiting ...");
-	
 		      orb.run();
 	 
 		} catch (Exception e) {
