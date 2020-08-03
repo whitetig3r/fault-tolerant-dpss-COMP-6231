@@ -331,7 +331,7 @@ class MainUDPThread extends Thread
 					else
 						data = RA_NAME + UDP_PARSER + "0" + UDP_PARSER + UDP_END_PARSE;
 				}
-				else if(messageArray[1].equals(ACTION_TO_PERFORM.PLAYER_SIGN_IN.name()))
+				else if(messageArray[1].equals(ACTION_TO_PERFORM.ADMIN_SIGN_IN.name()))
 				{
 					messageArray[4] = messageArray[4].trim();
 					setORBreference(messageArray[4]);
@@ -340,7 +340,7 @@ class MainUDPThread extends Thread
 					else
 						data = RA_NAME + UDP_PARSER + "0" + UDP_PARSER + UDP_END_PARSE;
 				}
-				else if(messageArray[1].equals(ACTION_TO_PERFORM.PLAYER_SIGN_OUT.name()))
+				else if(messageArray[1].equals(ACTION_TO_PERFORM.ADMIN_SIGN_OUT.name()))
 				{
 					messageArray[3] = messageArray[3].trim();
 					setORBreference(messageArray[3]);
