@@ -1,6 +1,8 @@
 package replicalead;
 
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.omg.CORBA.ORB;
 import org.omg.CosNaming.NameComponent;
@@ -18,7 +20,7 @@ public class GameServerAS extends Thread {
 		      POA rootpoa = POAHelper.narrow(orb.resolve_initial_references("RootPOA"));
 		      rootpoa.the_POAManager().activate();
 	
-		      GameServerServant gameServer = new GameServerServant("AS");
+		      GameServerServant gameServer = new GameServerServant("AS", new ArrayList<>(Arrays.asList(12989,12990,12991)));
 		      gameServer.setORB(orb); 
 	
 		      org.omg.CORBA.Object ref = rootpoa.servant_to_reference(gameServer);

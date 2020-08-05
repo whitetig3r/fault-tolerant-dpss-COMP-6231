@@ -3,11 +3,13 @@ import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -30,6 +32,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.omg.CORBA.ORB;
+import org.omg.CosNaming.NamingContextPackage.InvalidName;
+import org.omg.PortableServer.POA;
+import org.omg.PortableServer.POAHelper;
+import org.omg.PortableServer.POAManagerPackage.AdapterInactive;
+import org.omg.PortableServer.POAPackage.ObjectNotActive;
+import org.omg.PortableServer.POAPackage.ServantAlreadyActive;
+import org.omg.PortableServer.POAPackage.WrongPolicy;
 
 import exceptions.BadPasswordException;
 import exceptions.BadUserNameException;
@@ -40,11 +49,13 @@ import frontend.GameServerPOA;
 import models.Player;
 
 public class GameServerServant extends GameServerPOA implements Runnable {
-	private final ArrayList<Integer> EXT_UDP_PORTS = new ArrayList<>(Arrays.asList(6789,6790,6791));
+	private ArrayList<Integer> EXT_UDP_PORTS;
 	private int INT_UDP_PORT;
 	private final int SERVER_TIMEOUT_IN_MILLIS = 5000;
 	private boolean hasCrashed = false;
 	private DatagramSocket aSocket = null;
+	private ORBThread orbThread;
+	final String[] defaultORBArgs = { "-ORBInitialPort", "1050" };
 	
 	// INSTANCE-WIDE TRANSACTIONAL LOCKS
 	private final WriteLock playerHashTransactionLock = new ReentrantReadWriteLock().writeLock();
@@ -55,23 +66,30 @@ public class GameServerServant extends GameServerPOA implements Runnable {
 	private String gameServerLocation;
 	private ORB orb;
 
-	public GameServerServant(String location) throws UnknownServerRegionException {
+	public GameServerServant(String location, ArrayList<Integer> extUdpPorts) throws UnknownServerRegionException {
 		super();
 		this.gameServerLocation = location; 
+		this.EXT_UDP_PORTS = extUdpPorts;
 		// create a region administrator account
 		createPlayerAccount("Admin","Admin","Admin","Admin", getRegionDefaultIP(), 0);
 		seedDataStore();
 		setExternalPorts();
+		orbThread = new ORBThread(createORB(defaultORBArgs));
+		orbThread.start();
+		System.out.println("ORB is running");
 	}
 	
+	public GameServerServant(String gameServerLocation2, int iNT_UDP_PORT2,
+			ConcurrentHashMap<Character, CopyOnWriteArrayList<Player>> playerHash2) {
+		this.gameServerLocation = gameServerLocation2;
+		this.INT_UDP_PORT = iNT_UDP_PORT2;
+		this.playerHash = playerHash2;
+	}
+
 	@Override
 	public void run() {
 		// TODO Auto-generated method stub
-		if(hasCrashed) {
-			// LOG THE RESTART
-			runRegionUdpServer();
-		}
-		
+		runRegionUdpServer();
 	}
 	
 	protected void freeServerResources() {
@@ -761,6 +779,31 @@ public class GameServerServant extends GameServerPOA implements Runnable {
 	
 	public void setORB(ORB orb) {
 		this.orb = orb; 
+	}
+	
+	private ORB createORB(String[] pArgs)
+	{
+		orb = null;
+		try {
+			// Initialize the ORB object
+			orb = ORB.init(pArgs, null);
+			POA rootPOA = POAHelper.narrow(orb.resolve_initial_references("RootPOA"));
+			GameServerServant aInterface = new GameServerServant(gameServerLocation, INT_UDP_PORT, playerHash);
+			byte [] id = rootPOA.activate_object(aInterface);
+			// Obtain reference to CORBA object
+			org.omg.CORBA.Object reference_CORBA = rootPOA.id_to_reference(id);
+			// Write the CORBA object to a file
+			String stringORB = orb.object_to_string(reference_CORBA);
+			PrintWriter file = new PrintWriter(gameServerLocation + "_IOR.txt");
+			file.print(stringORB);
+			file.close();
+			rootPOA.the_POAManager().activate();
+			System.out.println("ORB init completed with file " + gameServerLocation + "_IOR.txt");
+		} catch (ServantAlreadyActive | WrongPolicy | 
+				ObjectNotActive | FileNotFoundException | AdapterInactive | org.omg.CORBA.ORBPackage.InvalidName e) {
+			System.out.println("ORB Creation Error: " + e.getMessage());
+		}
+		return orb;
 	}
 	
 	public void shutdown() {

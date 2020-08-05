@@ -8,9 +8,26 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.SocketException;
-import java.util.logging.Logger;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.omg.CORBA.ORB;
+
+class ORBThread extends Thread
+{
+	private ORB orb;
+
+	protected ORBThread(ORB pOrb)
+	{
+		orb = pOrb;
+	}
+
+	@Override
+	public void run()
+	{
+		orb.run();
+	}
+}
 
 class ReplicaManagerListenUDPThread extends Thread
 {
@@ -83,7 +100,6 @@ class ReplicaManagerListenUDPThread extends Thread
 				if(messageArray[1].equals(ACTION_TO_PERFORM.RESTART_REPLICA.name()))
 				{
 					bShouldRestart = true;
-					System.out.println(bShouldRestart);
 				}
 			}
 		}
@@ -153,7 +169,7 @@ class MainUDPThread extends Thread
 	protected static String GeoLocationOfGameServerAS = "182";
 	
 	// Main method which runs the UDP thread for replica A
-	public static void main(String[] args) 
+	public static void main(String[] args) throws InterruptedException 
 	{
 		String[] defaultArgs = {};
 		replicaOne = new MainUDPThread(UDP_PORT_REPLICA_A, defaultArgs);
@@ -161,20 +177,23 @@ class MainUDPThread extends Thread
 		{
 			if(replicaOne.replicaManagerListener.shouldRestart())
 			{
+				System.out.println("Received RM Command to restart");
 				replicaOne.stopServers();
 				replicaOne.startServers();
 				replicaOne.replicaManagerListener.resetShouldRestart();
 			}
 			if(replicaOne.replicaManagerListener.hasCrashed())
 			{
-				//replicaOne.aLog.info("Crash detected in ReplicaA Replica Manager UDP Thread, restarting UDP");
+				System.out.println("Crash detected in ReplicaA Replica Manager UDP Thread, restarting UDP");
 				try {
 					replicaOne.replicaManagerListener = new ReplicaManagerListenUDPThread(UDP_PORT_REPLICA_A);
 				} catch (SocketException e) {
-					//replicaOne.aLog.info("ReplicaA Replica Manager creating failed");
+					System.out.println("ReplicaA Replica Manager creating failed");
 				}
 				replicaOne.replicaManagerListener.start();
 			}
+			
+			Thread.sleep(200);
 		}
 	}
 	
@@ -239,9 +258,9 @@ class MainUDPThread extends Thread
 		try
 		{
 			// Create Game Servers within each thread
-			aNAGameServer = new GameServerServant(RA_NA_NAME);
-			aEUGameServer = new GameServerServant(RA_EU_NAME);
-			aASGameServer = new GameServerServant(RA_AS_NAME);
+			aNAGameServer = new GameServerServant(RA_NA_NAME, new ArrayList<>(Arrays.asList(7989,7990,7991)));
+			aEUGameServer = new GameServerServant(RA_EU_NAME, new ArrayList<>(Arrays.asList(8989,8990,8991)));
+			aASGameServer = new GameServerServant(RA_AS_NAME, new ArrayList<>(Arrays.asList(9989,9990,9991)));
 			
 			// Start the Threads running each runnable Game Server
 			aNAThread = new Thread(aNAGameServer);
@@ -250,6 +269,7 @@ class MainUDPThread extends Thread
 			aNAThread.start();
 			aEUThread.start();
 			aASThread.start();
+			System.out.println("Restarted All Servers");
 		}
 		catch(Exception e)
 		{
@@ -267,9 +287,12 @@ class MainUDPThread extends Thread
 			aNAThread = null;
 			aEUThread = null;
 			aASThread = null;
-			aNAGameServer.freeServerResources();
-			aEUGameServer.freeServerResources();
-			aASGameServer.freeServerResources();
+			if(aNAGameServer != null)
+				aNAGameServer.freeServerResources();
+			if(aEUGameServer != null)
+				aEUGameServer.freeServerResources();
+			if(aASGameServer != null)
+				aASGameServer.freeServerResources();
 			aNAGameServer = null;
 			aEUGameServer = null;
 			aASGameServer = null;
@@ -307,9 +330,10 @@ class MainUDPThread extends Thread
 				{
 					messageArray[7] = messageArray[7].trim();
 					setORBreference(messageArray[7]);
-					if(aInterfaceIDL.createPlayerAccount(messageArray[2], messageArray[3], messageArray[7],
-														 messageArray[5], messageArray[6], Integer.parseInt(messageArray[4])).startsWith("ERR"))
-						data = RA_NAME + UDP_PARSER + "1" + UDP_PARSER + UDP_END_PARSE;
+					String r_Result = aInterfaceIDL.createPlayerAccount(messageArray[2], messageArray[3], messageArray[7],
+							 messageArray[5], messageArray[6], Integer.parseInt(messageArray[4]));
+					if(!r_Result.startsWith("ERR"))
+						data = RA_NAME + UDP_PARSER + r_Result + UDP_PARSER + UDP_END_PARSE;
 					else
 						data = RA_NAME + UDP_PARSER + "0" + UDP_PARSER + UDP_END_PARSE;
 				}
@@ -317,8 +341,9 @@ class MainUDPThread extends Thread
 				{
 					messageArray[4] = messageArray[4].trim();
 					setORBreference(messageArray[4]);
-					if(aInterfaceIDL.playerSignIn(messageArray[2], messageArray[3], messageArray[4]).startsWith("ERR"))
-						data = RA_NAME + UDP_PARSER + "1" + UDP_PARSER + UDP_END_PARSE;
+					String r_Result = aInterfaceIDL.playerSignIn(messageArray[2], messageArray[3], messageArray[4]);
+					if(!r_Result.startsWith("ERR"))
+						data = RA_NAME + UDP_PARSER + r_Result + UDP_PARSER + UDP_END_PARSE;
 					else
 						data = RA_NAME + UDP_PARSER + "0" + UDP_PARSER + UDP_END_PARSE;
 				}
@@ -326,8 +351,9 @@ class MainUDPThread extends Thread
 				{
 					messageArray[3] = messageArray[3].trim();
 					setORBreference(messageArray[3]);
-					if(aInterfaceIDL.playerSignOut(messageArray[2], messageArray[3]).startsWith("ERR"))
-						data = RA_NAME + UDP_PARSER + "1" + UDP_PARSER + UDP_END_PARSE;
+					String r_Result = aInterfaceIDL.playerSignOut(messageArray[2], messageArray[3]);
+					if(!r_Result.startsWith("ERR"))
+						data = RA_NAME + UDP_PARSER + r_Result + UDP_PARSER + UDP_END_PARSE;
 					else
 						data = RA_NAME + UDP_PARSER + "0" + UDP_PARSER + UDP_END_PARSE;
 				}
@@ -335,8 +361,9 @@ class MainUDPThread extends Thread
 				{
 					messageArray[4] = messageArray[4].trim();
 					setORBreference(messageArray[4]);
-					if(aInterfaceIDL.adminSignIn(messageArray[2], messageArray[3], messageArray[4]).startsWith("ERR"))
-						data = RA_NAME + UDP_PARSER + "1" + UDP_PARSER + UDP_END_PARSE;
+					String r_Result = aInterfaceIDL.adminSignIn(messageArray[2], messageArray[3], messageArray[4]);
+					if(!r_Result.startsWith("ERR"))
+						data = RA_NAME + UDP_PARSER + r_Result + UDP_PARSER + UDP_END_PARSE;
 					else
 						data = RA_NAME + UDP_PARSER + "0" + UDP_PARSER + UDP_END_PARSE;
 				}
@@ -344,8 +371,9 @@ class MainUDPThread extends Thread
 				{
 					messageArray[3] = messageArray[3].trim();
 					setORBreference(messageArray[3]);
-					if(aInterfaceIDL.adminSignOut(messageArray[2], messageArray[3]).startsWith("ERR"))
-						data = RA_NAME + UDP_PARSER + "1" + UDP_PARSER + UDP_END_PARSE;
+					String r_Result = aInterfaceIDL.adminSignOut(messageArray[2], messageArray[3]);
+					if(!r_Result.startsWith("ERR"))
+						data = RA_NAME + UDP_PARSER + r_Result + UDP_PARSER + UDP_END_PARSE;
 					else
 						data = RA_NAME + UDP_PARSER + "0" + UDP_PARSER + UDP_END_PARSE;
 				}
@@ -353,8 +381,9 @@ class MainUDPThread extends Thread
 				{
 					messageArray[5] = messageArray[5].trim();
 					setORBreference(messageArray[4]);
-					if(aInterfaceIDL.transferAccount(messageArray[2], messageArray[3], messageArray[4], messageArray[5]).startsWith("ERR"))
-						data = RA_NAME + UDP_PARSER + "1" + UDP_PARSER + UDP_END_PARSE;
+					String r_Result = aInterfaceIDL.transferAccount(messageArray[2], messageArray[3], messageArray[4], messageArray[5]);
+					if(!r_Result.startsWith("ERR"))
+						data = RA_NAME + UDP_PARSER + r_Result + UDP_PARSER + UDP_END_PARSE;
 					else
 						data = RA_NAME + UDP_PARSER + "0" + UDP_PARSER + UDP_END_PARSE;
 				}
@@ -362,8 +391,9 @@ class MainUDPThread extends Thread
 				{
 					messageArray[5] = messageArray[5].trim();
 					setORBreference(messageArray[4]);
-					if(aInterfaceIDL.suspendAccount(messageArray[2], messageArray[3], messageArray[4], messageArray[5]).startsWith("ERR"))
-						data = RA_NAME + UDP_PARSER + "1" + UDP_PARSER + UDP_END_PARSE;
+					String r_Result = aInterfaceIDL.suspendAccount(messageArray[2], messageArray[3], messageArray[4], messageArray[5]);
+					if(!r_Result.startsWith("ERR"))
+						data = RA_NAME + UDP_PARSER + r_Result + UDP_PARSER + UDP_END_PARSE;
 					else
 						data = RA_NAME + UDP_PARSER + "0" + UDP_PARSER + UDP_END_PARSE;
 				}
@@ -384,6 +414,7 @@ class MainUDPThread extends Thread
 		}
 		catch (IOException e)
 		{
+			e.printStackTrace();
 			System.out.println("UDP crashed, closing UDP Socket");
 			aSendSocket.close();
 			System.out.println("UDP crashed, creating new UDP Socket");

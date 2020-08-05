@@ -87,7 +87,6 @@ public class PlayersClient extends CoreClient {
 		
 		org.omg.CORBA.Object reference_CORBA = orb.string_to_object(stringORB);
 		serverStub = GameServerHelper.narrow(reference_CORBA);
-		System.out.println("HERE " + serverStub);
 	}
 
 	private static void createPlayerAccount() {

@@ -33,41 +33,20 @@ public class GameServerFEThread extends Thread {
 	@Override
 	public void run ()
 	{
-		while(true)
-			handleCommunication();
-	}
-
-	/*  Handles the messages received from the replica leader */
-	private void handleCommunication() 
-	{
-		try {
-			request = new DatagramPacket(buffer, buffer.length);
-			dgSocket.receive(request);
-			
-			messageArray = (new String(request.getData())).split("/");
-			
-			if(messageArray[0].equals("LR"))
-			{
-				if(messageArray.length > 3) // get Player Status
+		while(true) {
+			try {
+				request = new DatagramPacket(buffer, buffer.length);
+				dgSocket.receive(request);
+				messageArray = (new String(request.getData())).split("/");
+				if(messageArray[0].equals("LR"))
 				{
-					//messageArray[1] is confirmation
-					GameServerORBThread.setResponse(messageArray[2] + " Online " + messageArray[3] + " Offline " + messageArray[4] + "\n" +
-							messageArray[5] + " Online " + messageArray[6] + " Offline " + messageArray[7] + "\n" +
-							messageArray[8] + " Online " + messageArray[9] + " Offline " + messageArray[10]);
+					GameServerORBThread.setConfimation(messageArray[1]);
+					GameServerORBThread.setLeaderResponded(true);
 				}
-				else
-				{
-					switch(Integer.parseInt(messageArray[1].substring(0, 1)))
-					{
-						case 0 : GameServerORBThread.setConfimation(false); break;
-						case 1 : GameServerORBThread.setConfimation(true); break;
-					}
-				}
-				GameServerORBThread.setLeaderResponded(true);
+			} catch (IOException e) {
+				dgSocket.close();
+				threadDown = true;
 			}
-		} catch (IOException e) {
-			dgSocket.close();
-			threadDown = true;
 		}
-	}	
+	}
 }

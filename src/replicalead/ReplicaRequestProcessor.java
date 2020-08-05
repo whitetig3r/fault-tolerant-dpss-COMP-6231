@@ -19,9 +19,10 @@ public class ReplicaRequestProcessor {
 	protected static void CompareResults() {
 		System.out.println("Result Processed By Leader - " + m_LeaderResultProcessed);
 		System.out.println("Result Processed By Replica A - " + m_Replica_A_Processed);
-		System.out.println("Result Processed By Replica B - " + m_Replica_B_Processed);
+		//System.out.println("Result Processed By Replica B - " + m_Replica_B_Processed);
 		
-		if(m_LeaderResultProcessed != null && m_Replica_A_Processed != null && m_Replica_B_Processed != null)
+		// && m_Replica_B_Processed != null
+		if(m_LeaderResultProcessed != null && m_Replica_A_Processed != null )
 		{
 	
 			if(m_HasBeenProcessed == true)
@@ -33,26 +34,28 @@ public class ReplicaRequestProcessor {
 			
 			String l_leaderData_end_parser = m_LeaderResultProcessed + "/" + "$";
 			String l_segments_Leader[] = l_leaderData_end_parser.split(UDP_PARSER);
+			System.out.println("leader -- " + l_leaderData_end_parser);
 			String l_segments_A[] = m_Replica_A_Processed.split(UDP_PARSER);
-			String l_segments_B[] = m_Replica_B_Processed.split(UDP_PARSER);
+			//String l_segments_B[] = m_Replica_B_Processed.split(UDP_PARSER);
 					
-			System.out.println("TEsting 1");
 			
 			// check if all results are same
-			if(l_segments_Leader[0].equals(l_segments_A[0]) || l_segments_Leader[0].equals(l_segments_B[0]))
+			 // || l_segments_Leader[0].equals(l_segments_B[0])
+			if(l_segments_Leader[0].equals(l_segments_A[0]))
 			{
 				String l_rmdatagram = "";
-				if(l_segments_Leader.length < 4 && l_segments_A.length < 4 && l_segments_B.length < 4)
+				 // && l_segments_B.length < 4
+				if(l_segments_Leader.length < 4 && l_segments_A.length < 4)
 				{
 					if(!l_segments_Leader[0].equals(l_segments_A[0]))
 					{
 						l_rmdatagram = "RA";
 					}
 				
-					else if(!l_segments_Leader[0].equals(l_segments_B[0]))
-					{
-						l_rmdatagram = "RB";
-					}
+//					else if(!l_segments_Leader[0].equals(l_segments_B[0]))
+//					{
+//						l_rmdatagram = "RB";
+//					}
 					
 					// Create a data packet for FE
 					String l_Data_FE = LR_NAME;
@@ -87,7 +90,7 @@ public class ReplicaRequestProcessor {
 					// m_LeaderResultProcessed is 1/NA/0/0/EU/0/0/AS/0/0
 					String Temp_leader = m_LeaderResultProcessed.substring(2,m_LeaderResultProcessed.length());
 					String Temp_A = m_Replica_A_Processed.substring(2,m_Replica_A_Processed.length());
-					String Temp_B = m_Replica_B_Processed.substring(2,m_Replica_B_Processed.length());
+					//String Temp_B = m_Replica_B_Processed.substring(2,m_Replica_B_Processed.length());
 					
 					
 					if(!l_segments_Leader[0].equals(l_segments_A[0]))
@@ -98,13 +101,13 @@ public class ReplicaRequestProcessor {
 						System.out.println("LocalReplicsRequestProcessing.CompareResults: Get Player Status Check l_rmdatagram - " + l_rmdatagram);
 					}
 				
-					else if(!l_segments_Leader[0].equals(l_segments_B[0]))
-					{
-						if(checkgetPlayerStatus(Temp_leader, Temp_B).equals("Problem"))
-							l_rmdatagram =  "RB";
-						
-						System.out.println("LocalReplicsRequestProcessing.CompareResults: Get Player Status Check l_rmdatagram - " + l_rmdatagram);
-					}
+//					else if(!l_segments_Leader[0].equals(l_segments_B[0]))
+//					{
+//						if(checkgetPlayerStatus(Temp_leader, Temp_B).equals("Problem"))
+//							l_rmdatagram =  "RB";
+//						
+//						System.out.println("LocalReplicsRequestProcessing.CompareResults: Get Player Status Check l_rmdatagram - " + l_rmdatagram);
+//					}
 					
 					// Fil up the Gata gram to set FE
 					String l_Data_FE = LR_NAME ;

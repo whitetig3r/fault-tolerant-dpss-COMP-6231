@@ -87,7 +87,7 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
 			}
 			
 			try {
-				Thread.sleep(200);
+				Thread.sleep(200);;
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -166,10 +166,15 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
 		tempList.addAll(Arrays.asList(ACTION_TO_PERFORM.PLAYER_CREATE_ACCOUNT,fName,lName,uName,password,ipAddress,age));
 		fifoQueue.add(tempList);
 		tempList = null;
-		while(!GameServerORBThread.hasLeaderResponded())  /* Wait for the leader to respond */
-			System.out.print("");
+		while(!GameServerORBThread.hasLeaderResponded()) {
+			try {
+				Thread.sleep(200);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 		// LOG
-		return "log message";
+		return GameServerORBThread.getConfirmation();
 	}
 
 	@Override
@@ -179,10 +184,15 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
 		tempList.addAll(Arrays.asList(ACTION_TO_PERFORM.PLAYER_SIGN_IN,uName,password,ipAddress));
 		fifoQueue.add(tempList);
 		tempList = null;
-		while(!GameServerORBThread.hasLeaderResponded())  /* Wait for the leader to respond */
-			System.out.print("");
+		while(!GameServerORBThread.hasLeaderResponded()) {
+			try {
+				Thread.sleep(200);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 		// LOG
-		return "log message";
+		return GameServerORBThread.getConfirmation();
 	}
 
 	@Override
@@ -192,10 +202,15 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
 		tempList.addAll(Arrays.asList(ACTION_TO_PERFORM.PLAYER_SIGN_OUT,uName,ipAddress));
 		fifoQueue.add(tempList);
 		tempList = null;
-		while(!GameServerORBThread.hasLeaderResponded())  /* Wait for the leader to respond */
-			System.out.print("");
+		while(!GameServerORBThread.hasLeaderResponded()) {
+			try {
+				Thread.sleep(200);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 		// LOG
-		return "log message";
+		return GameServerORBThread.getConfirmation();
 	}
 
 	@Override
@@ -205,10 +220,15 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
 		tempList.addAll(Arrays.asList(ACTION_TO_PERFORM.ADMIN_SIGN_IN,uName,password,ipAddress));
 		fifoQueue.add(tempList);
 		tempList = null;
-		while(!GameServerORBThread.hasLeaderResponded())  /* Wait for the leader to respond */
-			System.out.print("");
+		while(!GameServerORBThread.hasLeaderResponded()) {
+			try {
+				Thread.sleep(200);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 		// LOG
-		return "log message";
+		return GameServerORBThread.getConfirmation();
 	}
 
 	@Override
@@ -218,10 +238,15 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
 		tempList.addAll(Arrays.asList(ACTION_TO_PERFORM.ADMIN_SIGN_OUT,uName,ipAddress));
 		fifoQueue.add(tempList);
 		tempList = null;
-		while(!GameServerORBThread.hasLeaderResponded())  /* Wait for the leader to respond */
-			System.out.print("");
+		while(!GameServerORBThread.hasLeaderResponded()) {
+			try {
+				Thread.sleep(200);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 		// LOG
-		return "log message";
+		return GameServerORBThread.getConfirmation();
 	}
 
 	@Override
@@ -231,10 +256,15 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
 		tempList.addAll(Arrays.asList(ACTION_TO_PERFORM.ADMIN_GET_PLAYER_STATUS,uName,password,ipAddress));
 		fifoQueue.add(tempList);
 		tempList = null;
-		while(!GameServerORBThread.hasLeaderResponded())  /* Wait for the leader to respond */
-			System.out.print("");
+		while(!GameServerORBThread.hasLeaderResponded()) {
+			try {
+				Thread.sleep(200);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 		// LOG
-		return "log message";
+		return GameServerORBThread.getConfirmation();
 	}
 
 	@Override
@@ -244,10 +274,15 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
 		tempList.addAll(Arrays.asList(ACTION_TO_PERFORM.PLAYER_TRANSFER_ACCOUNT,uName,password));
 		fifoQueue.add(tempList);
 		tempList = null;
-		while(!GameServerORBThread.hasLeaderResponded())  /* Wait for the leader to respond */
-			System.out.print("");
+		while(!GameServerORBThread.hasLeaderResponded()) {
+			try {
+				Thread.sleep(200);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 		// LOG
-		return "log message";
+		return GameServerORBThread.getConfirmation();
 	}
 
 	@Override
@@ -257,10 +292,15 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
 		tempList.addAll(Arrays.asList(ACTION_TO_PERFORM.ADMIN_SUSPEND_PLAYER_ACCOUNT,uName,password,ipAddress));
 		fifoQueue.add(tempList);
 		tempList = null;
-		while(!GameServerORBThread.hasLeaderResponded())  /* Wait for the leader to respond */
-			System.out.print("");
+		while(!GameServerORBThread.hasLeaderResponded()) {
+			try {
+				Thread.sleep(200);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 		// LOG
-		return "log message";
+		return GameServerORBThread.getConfirmation();
 	}
 
 }

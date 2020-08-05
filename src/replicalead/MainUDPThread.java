@@ -46,7 +46,6 @@ public class MainUDPThread extends Thread {
   				
   				if(l_result != null)
   				{
-  					System.out.println(l_result);
   					String l_senderName = parseSenderName(l_result);
   					if(l_senderName != null)
   					{
@@ -60,11 +59,11 @@ public class MainUDPThread extends Thread {
   				    				{
   				    				
   	  				    				String l_multiCastDGram_replica =  LR_NAME + UDP_PARSER + m_UDPDataGram_from_stripped;
-  				    					System.out.println("UDP_replicaLeader.set_UDP_Server_Online : l_multiCastDGram_replica - "+ l_multiCastDGram_replica);
+  				    					System.out.println("UDP_replicaLeader.set_UDP_Server_Online : l_multiCastDGram_replica - " + l_multiCastDGram_replica);
   				    					ReplicaRequestProcessor.m_LeaderResultProcessed = l_LocalOrbProcessing.performRMI(m_UDPDataGram_from_stripped);
   	  				    				sendMulticastPacket_Replicas(l_multiCastDGram_replica);
   				    					
-  				    				}
+  				    				}	    	
   				    				
   				    				l_LocalOrbProcessing = null;
   				    				m_UDPDataGram_from_stripped = "";  				    				
@@ -132,7 +131,8 @@ public class MainUDPThread extends Thread {
 			InetAddress aHost = InetAddress.getByName("localhost");
 			int serverPort = p_portNumber;		                                                 
 			DatagramPacket request = new DatagramPacket(m,  p_Data.length(), aHost, serverPort);
-			aSocket.send(request);			                        
+			aSocket.send(request);		
+			System.out.println("p_Data -- " + p_Data + " port --" + p_portNumber);
 			return true;
 		}
 		catch (SocketException e)
@@ -165,12 +165,7 @@ public class MainUDPThread extends Thread {
 			System.out.println("UDP_replicaLeader.sendMulticastPacket_Replicas : p_Data - "+ p_Data);
 			
 			dgram = new DatagramPacket(buffer, buffer.length, InetAddress.getByName(UDP_ADDR_REPLICA_COMMUNICATION_MULTICAST), UDP_PORT_REPLICA_LEAD_MULTICAST);
-			//while(true) 
-			{
-				//System.err.print(".");
-				socket.send(dgram);
-				//Thread.sleep(1000);
-			}
+			socket.send(dgram);
 		} 
 	
 		catch (SocketException e)

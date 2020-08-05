@@ -5,14 +5,14 @@ import org.omg.CORBA.ORB;
 public class GameServerORBThread extends Thread {
 	private ORB orb;
 	private static boolean receivedResponse;
-	private static boolean confirmed;
+	private static String confirmed;
 	private static String leadResponse;
 
 	protected GameServerORBThread(ORB orb)
 	{
 		this.orb = orb;
 		receivedResponse = false;
-		confirmed = false;
+		confirmed = null;
 	}
 
 	protected static void setLeaderResponded(boolean responded)
@@ -25,13 +25,13 @@ public class GameServerORBThread extends Thread {
 		return receivedResponse;
 	}
 	
-	protected static void setConfimation(boolean confirmation)
+	protected static void setConfimation(String confirmation)
 	{
 		confirmed = confirmation;
 	}
 	
 
-	protected static boolean getConfirmation()
+	protected static String getConfirmation()
 	{
 		return confirmed;
 	}

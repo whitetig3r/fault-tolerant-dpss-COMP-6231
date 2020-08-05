@@ -40,7 +40,7 @@ import frontend.GameServerPOA;
 import models.Player;
 
 public class GameServerServant extends GameServerPOA {
-	private final ArrayList<Integer> EXT_UDP_PORTS = new ArrayList<>(Arrays.asList(6789,6790,6791));
+	private ArrayList<Integer> EXT_UDP_PORTS;
 	private int INT_UDP_PORT;
 	private final int SERVER_TIMEOUT_IN_MILLIS = 5000;
 	
@@ -53,9 +53,10 @@ public class GameServerServant extends GameServerPOA {
 	private String gameServerLocation;
 	private ORB orb;
 
-	public GameServerServant(String location) throws UnknownServerRegionException {
+	public GameServerServant(String location, ArrayList<Integer> extUdpPorts) throws UnknownServerRegionException {
 		super();
 		this.gameServerLocation = location; 
+		this.EXT_UDP_PORTS = extUdpPorts;
 		// create a region administrator account
 		createPlayerAccount("Admin","Admin","Admin","Admin", getRegionDefaultIP(), 0);
 		seedDataStore();

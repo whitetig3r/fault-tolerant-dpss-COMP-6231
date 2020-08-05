@@ -21,7 +21,7 @@ public class RequestProcessor {
 		  ADMIN_SIGN_IN,
 		  ADMIN_SIGN_OUT,
 		  ADMIN_GET_PLAYER_STATUS, 
-		  ADMIN_SUSPEND_PLAYER_ACCOUNT,
+		  ADMIN_SUSPEND_PLAYER_ACCOUNT, 
 		  RESTART_REPLICA
 	}
 	
@@ -94,7 +94,6 @@ public class RequestProcessor {
 				
 				int l_numElements = l_ParamArray.length;
 				
-				
 				ACTION_TO_PERFORM l_functionValue = ACTION_TO_PERFORM.valueOf(l_ParamArray[0]);
 				
 				// Send CREATE PLAYER ACCOUNT
@@ -113,9 +112,9 @@ public class RequestProcessor {
 						}
 						
 						String l_MethodStatus =  l_LocalGameServerReference.createPlayerAccount(l_ParamArray[1], l_ParamArray[2], l_ParamArray[3], l_ParamArray[4], l_ParamArray[5], Integer.parseInt(l_ParamArray[6]));
-						if(l_MethodStatus.equals("SignUpsuccessful"))
+						if(l_MethodStatus.startsWith("Successfully created account for player with username"))
 						{
-							return "1";
+							return l_MethodStatus;
 						}
 						return "0";
 					}
@@ -143,9 +142,9 @@ public class RequestProcessor {
 						}
 						
 						String l_MethodStatus =  l_LocalGameServerReference.playerSignIn(l_ParamArray[1], l_ParamArray[2], l_ParamArray[3]);
-						if(l_MethodStatus.equals("Login successful"))
+						if(l_MethodStatus.startsWith("Successfully signed in player with username"))
 						{
-							return "1";
+							return l_MethodStatus;
 						}
 						return "0";
 					}
@@ -173,15 +172,73 @@ public class RequestProcessor {
 						}
 						
 						String l_MethodStatus =  l_LocalGameServerReference.playerSignOut(l_ParamArray[1], l_ParamArray[2]);
-						if(l_MethodStatus.equals("Successfully Signed Out."))
+						if(l_MethodStatus.startsWith("Successfully signed out player with username"))
 						{
-							return "1";
+							return l_MethodStatus;
 						}
 						return "0";
 					}
 					else
 					{
 						System.out.println("LocalOrbProcessing.performRMI : Eror: Have not parsed enough params for player sign out/n");
+						return "0";
+					}
+				}
+				
+				else if(l_functionValue == ACTION_TO_PERFORM.ADMIN_SIGN_IN) 
+				{
+					System.out.println("LocalOrbProcessing.performRMI : Admin Sign In Request/n");
+					if(l_numElements == 4)
+					{
+
+						GameServer l_LocalGameServerReference =  getServerReference(l_ParamArray[3]);
+						
+						if(l_LocalGameServerReference == null)
+						{
+							System.out.println("LocalOrbProcessing.performRMI : Error - Cannot perform RMI, GameServer = NULL/n");
+							return "0";
+						}
+						
+						String l_MethodStatus =  l_LocalGameServerReference.adminSignIn(l_ParamArray[1], l_ParamArray[2], l_ParamArray[3]);
+						if(l_MethodStatus.startsWith("Successfully signed in admin"))
+						{
+							return l_MethodStatus;
+						}
+						return "0";
+					}
+					else
+					{
+						System.out.println("LocalOrbProcessing.performRMI : Eror: Have not parsed enough params for admin sign in/n");
+						return "0";
+					}
+				}
+				
+				// Send ADMIN SIGN OUT
+				// adminSignOut(String p_Username, String IPAddress) 
+				else if(l_functionValue == ACTION_TO_PERFORM.ADMIN_SIGN_OUT) 
+				{
+					System.out.println("LocalOrbProcessing.performRMI : Admin Sign Out Request/n");
+					if(l_numElements == 3)
+					{
+
+						GameServer l_LocalGameServerReference =  getServerReference(l_ParamArray[2]);
+						
+						if(l_LocalGameServerReference == null)
+						{
+							System.out.println("LocalOrbProcessing.performRMI : Error - Cannot perform RMI, GameServer = NULL/n");
+							return "0";
+						}
+						
+						String l_MethodStatus =  l_LocalGameServerReference.adminSignOut(l_ParamArray[1], l_ParamArray[2]);
+						if(l_MethodStatus.startsWith("Successfully signed out admin"))
+						{
+							return l_MethodStatus;
+						}
+						return "0";
+					}
+					else
+					{
+						System.out.println("LocalOrbProcessing.performRMI : Eror: Have not parsed enough params for admin sign out/n");
 						return "0";
 					}
 				}
@@ -203,9 +260,9 @@ public class RequestProcessor {
 						}
 						
 						String l_MethodStatus =  l_LocalGameServerReference.transferAccount(l_ParamArray[1], l_ParamArray[2], l_ParamArray[3], l_ParamArray[4]);
-						if(l_MethodStatus.equals("Account Transfer Complete"))
+						if(l_MethodStatus.startsWith("Successfully TRANSFERRED ACCOUNT for player"))
 						{
-							return "1";
+							return l_MethodStatus;
 						}
 						System.out.println("LocalOrbProcessing.performRMI : Player Account Transfer Request - " + l_ParamArray[1] + l_ParamArray[2] + l_ParamArray[3] + l_ParamArray[4]);
 						return "0";
@@ -264,9 +321,9 @@ public class RequestProcessor {
 						}
 						
 						String l_MethodStatus =  l_LocalGameServerReference.suspendAccount(l_ParamArray[1], l_ParamArray[2], l_ParamArray[3], l_ParamArray[4]);
-						if(l_MethodStatus.equals("Account Suspension Confirmed."))
+						if(l_MethodStatus.startsWith("Successfully suspended account for player with username"))
 						{
-							return "1";
+							return l_MethodStatus;
 						}
 						return "0";
 					}
