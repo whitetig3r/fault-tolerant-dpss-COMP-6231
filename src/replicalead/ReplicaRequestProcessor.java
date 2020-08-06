@@ -22,6 +22,7 @@ public class ReplicaRequestProcessor {
 		
 		if(m_LeaderResultProcessed != null && m_Replica_A_Processed != null  && m_Replica_B_Processed != null)
 		{
+			m_checkedByPrevReplica = 0;
 	
 			if(m_HasBeenProcessed == true)
 			{
