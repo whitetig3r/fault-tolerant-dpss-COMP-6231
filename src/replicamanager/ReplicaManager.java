@@ -44,7 +44,7 @@ public class ReplicaManager
 		//Initialize the system by sending 3 UDP messages to 3 server groups
 		startServerGroup(UDP_PORT_REPLICA_LEAD);
 		startServerGroup(UDP_PORT_REPLICA_ONE);
-		//startServerGroup(UDP_PORT_REPLICA_TWO);
+		startServerGroup(UDP_PORT_REPLICA_TWO);
 
 		System.out.println ("Replica Manager sent request to run all servers!");
 		startServerListener(UDP_PORT_REPLICA_MANAGER);

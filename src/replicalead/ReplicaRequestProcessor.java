@@ -18,10 +18,9 @@ public class ReplicaRequestProcessor {
 	protected static void CompareResults() {
 		System.out.println("Result Processed By Leader - " + m_LeaderResultProcessed);
 		System.out.println("Result Processed By Replica A - " + m_Replica_A_Processed);
-		//System.out.println("Result Processed By Replica B - " + m_Replica_B_Processed);
+		System.out.println("Result Processed By Replica B - " + m_Replica_B_Processed);
 		
-		// && m_Replica_B_Processed != null
-		if(m_LeaderResultProcessed != null && m_Replica_A_Processed != null )
+		if(m_LeaderResultProcessed != null && m_Replica_A_Processed != null  && m_Replica_B_Processed != null)
 		{
 	
 			if(m_HasBeenProcessed == true)
@@ -34,7 +33,7 @@ public class ReplicaRequestProcessor {
 			String l_leaderData_end_parser = m_LeaderResultProcessed + "/" + "$";
 			String l_segments_Leader[] = l_leaderData_end_parser.split(UDP_PARSER);
 			String l_segments_A[] = m_Replica_A_Processed.split(UDP_PARSER);
-			//String l_segments_B[] = m_Replica_B_Processed.split(UDP_PARSER);
+			String l_segments_B[] = m_Replica_B_Processed.split(UDP_PARSER);
 					
 			for(int i=0;i<l_segments_Leader.length;i++) {
 				l_segments_Leader[i] = l_segments_Leader[i].trim(); 
@@ -44,23 +43,26 @@ public class ReplicaRequestProcessor {
 				l_segments_A[i] = l_segments_A[i].trim(); 
 			}
 			
+			for(int i=0;i<l_segments_A.length;i++) {
+				l_segments_B[i] = l_segments_B[i].trim(); 
+			}
+			
 			// check if all results are same
-			 // || l_segments_Leader[0].equals(l_segments_B[0])
-			if(l_segments_Leader[0].equals(l_segments_A[0]))
+			if(l_segments_Leader[0].equals(l_segments_A[0]) || l_segments_Leader[0].equals(l_segments_B[0]))
 			{
 				String l_rmdatagram = "";
-				 // && l_segments_B.length < 4
-				if(l_segments_Leader.length < 4 && l_segments_A.length < 4)
+				
+				if(l_segments_Leader.length < 4 && l_segments_A.length < 4  && l_segments_B.length < 4)
 				{
 					if(!l_segments_Leader[0].equals(l_segments_A[0]))
 					{
 						l_rmdatagram = "RA";
 					}
 				
-//					else if(!l_segments_Leader[0].equals(l_segments_B[0]))
-//					{
-//						l_rmdatagram = "RB";
-//					}
+					else if(!l_segments_Leader[0].equals(l_segments_B[0]))
+					{
+						l_rmdatagram = "RB";
+					}
 					
 					// Create a data packet for FE
 					String l_Data_FE = LR_NAME;
@@ -88,7 +90,6 @@ public class ReplicaRequestProcessor {
 						MainUDPThread.sendPacket(l_rmdatagram, UDP_PORT_REPLICA_MANAGER);
 					}
 				}
-			
 			
 			}
 		}
