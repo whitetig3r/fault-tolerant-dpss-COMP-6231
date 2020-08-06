@@ -40,7 +40,7 @@ class ReplicaManagerListenUDPThread extends Thread
 	private String [] messageArray;
 	
 	private final String UDP_PARSER = "/";
-	private int UDP_BUFFER_SIZE = 25000;
+	private int UDP_BUFFER_SIZE = 1200;
 	private static final String RM_NAME = "RM";
 
 	private enum ACTION_TO_PERFORM {
@@ -115,7 +115,7 @@ class MainUDPThread extends Thread
 {
 	
 	private final String UDP_PARSER = "/";
-	private int UDP_BUFFER_SIZE = 25000;
+	private int UDP_BUFFER_SIZE = 1200;
 
 	private enum ACTION_TO_PERFORM {
 		  PLAYER_CREATE_ACCOUNT,
@@ -258,9 +258,9 @@ class MainUDPThread extends Thread
 		try
 		{
 			// Create Game Servers within each thread
-			aNAGameServer = new GameServerServant(RA_NA_NAME, new ArrayList<>(Arrays.asList(7989,7990,7991)));
-			aEUGameServer = new GameServerServant(RA_EU_NAME, new ArrayList<>(Arrays.asList(8989,8990,8991)));
-			aASGameServer = new GameServerServant(RA_AS_NAME, new ArrayList<>(Arrays.asList(9989,9990,9991)));
+			aNAGameServer = new GameServerServant(RA_NA_NAME, new ArrayList<>(Arrays.asList(7990,7991)),7989);
+			aEUGameServer = new GameServerServant(RA_EU_NAME, new ArrayList<>(Arrays.asList(7989,7991)),7990);
+			aASGameServer = new GameServerServant(RA_AS_NAME, new ArrayList<>(Arrays.asList(7989,7990)),7991);
 			
 			// Start the Threads running each runnable Game Server
 			aNAThread = new Thread(aNAGameServer);
@@ -318,86 +318,73 @@ class MainUDPThread extends Thread
 	{
 		try 
 		{
+			buffer = new byte [UDP_BUFFER_SIZE];
 			requestFromLeaderPacket = new DatagramPacket(buffer, buffer.length);
 			aMulticastSocket.receive(requestFromLeaderPacket);
-			messageArray = (new String(requestFromLeaderPacket.getData())).split(UDP_PARSER);
+			String resp = new String(requestFromLeaderPacket.getData());
+			System.out.println("FROM RL -- " + resp);
+			messageArray = resp.split(UDP_PARSER);
 			requestFromLeaderPacket.setLength(buffer.length);
+			
+			for(int i =0; i<messageArray.length; i++) {
+				messageArray[i] = messageArray[i].trim();
+			}
+			
 			if(messageArray[0].equals(LR_NAME))
 			{
 				messageArray[1] = messageArray[1].trim();
-				System.out.println("Recieived request from replica leader : " + messageArray[1]);
+				
 				if(messageArray[1].equals(ACTION_TO_PERFORM.PLAYER_CREATE_ACCOUNT.name()))
 				{
-					messageArray[7] = messageArray[7].trim();
-					setORBreference(messageArray[7]);
-					String r_Result = aInterfaceIDL.createPlayerAccount(messageArray[2], messageArray[3], messageArray[7],
-							 messageArray[5], messageArray[6], Integer.parseInt(messageArray[4]));
-					if(!r_Result.startsWith("ERR"))
-						data = RA_NAME + UDP_PARSER + r_Result + UDP_PARSER + UDP_END_PARSE;
-					else
-						data = RA_NAME + UDP_PARSER + "0" + UDP_PARSER + UDP_END_PARSE;
+					messageArray[6] = messageArray[6].trim();
+					setORBreference(messageArray[6]);
+					String r_Result = aInterfaceIDL.createPlayerAccount(messageArray[2], messageArray[3], messageArray[4],
+							 messageArray[5], messageArray[6], Integer.parseInt(messageArray[7].trim()));
+					data = RA_NAME + UDP_PARSER + r_Result + UDP_PARSER + UDP_END_PARSE;
 				}
 				else if(messageArray[1].equals(ACTION_TO_PERFORM.PLAYER_SIGN_IN.name()))
 				{
 					messageArray[4] = messageArray[4].trim();
 					setORBreference(messageArray[4]);
 					String r_Result = aInterfaceIDL.playerSignIn(messageArray[2], messageArray[3], messageArray[4]);
-					if(!r_Result.startsWith("ERR"))
-						data = RA_NAME + UDP_PARSER + r_Result + UDP_PARSER + UDP_END_PARSE;
-					else
-						data = RA_NAME + UDP_PARSER + "0" + UDP_PARSER + UDP_END_PARSE;
+					data = RA_NAME + UDP_PARSER + r_Result + UDP_PARSER + UDP_END_PARSE;
 				}
 				else if(messageArray[1].equals(ACTION_TO_PERFORM.PLAYER_SIGN_OUT.name()))
 				{
 					messageArray[3] = messageArray[3].trim();
 					setORBreference(messageArray[3]);
-					String r_Result = aInterfaceIDL.playerSignOut(messageArray[2], messageArray[3]);
-					if(!r_Result.startsWith("ERR"))
-						data = RA_NAME + UDP_PARSER + r_Result + UDP_PARSER + UDP_END_PARSE;
-					else
-						data = RA_NAME + UDP_PARSER + "0" + UDP_PARSER + UDP_END_PARSE;
+					String r_Result = aInterfaceIDL.playerSignOut(messageArray[2], messageArray[3]);				
+					data = RA_NAME + UDP_PARSER + r_Result + UDP_PARSER + UDP_END_PARSE;
 				}
 				else if(messageArray[1].equals(ACTION_TO_PERFORM.ADMIN_SIGN_IN.name()))
 				{
 					messageArray[4] = messageArray[4].trim();
 					setORBreference(messageArray[4]);
 					String r_Result = aInterfaceIDL.adminSignIn(messageArray[2], messageArray[3], messageArray[4]);
-					if(!r_Result.startsWith("ERR"))
-						data = RA_NAME + UDP_PARSER + r_Result + UDP_PARSER + UDP_END_PARSE;
-					else
-						data = RA_NAME + UDP_PARSER + "0" + UDP_PARSER + UDP_END_PARSE;
+					data = RA_NAME + UDP_PARSER + r_Result + UDP_PARSER + UDP_END_PARSE;
 				}
 				else if(messageArray[1].equals(ACTION_TO_PERFORM.ADMIN_SIGN_OUT.name()))
 				{
 					messageArray[3] = messageArray[3].trim();
 					setORBreference(messageArray[3]);
 					String r_Result = aInterfaceIDL.adminSignOut(messageArray[2], messageArray[3]);
-					if(!r_Result.startsWith("ERR"))
-						data = RA_NAME + UDP_PARSER + r_Result + UDP_PARSER + UDP_END_PARSE;
-					else
-						data = RA_NAME + UDP_PARSER + "0" + UDP_PARSER + UDP_END_PARSE;
+					data = RA_NAME + UDP_PARSER + r_Result + UDP_PARSER + UDP_END_PARSE;
 				}
 				else if(messageArray[1].equals(ACTION_TO_PERFORM.PLAYER_TRANSFER_ACCOUNT.name()))
 				{
 					messageArray[5] = messageArray[5].trim();
 					setORBreference(messageArray[4]);
 					String r_Result = aInterfaceIDL.transferAccount(messageArray[2], messageArray[3], messageArray[4], messageArray[5]);
-					if(!r_Result.startsWith("ERR"))
-						data = RA_NAME + UDP_PARSER + r_Result + UDP_PARSER + UDP_END_PARSE;
-					else
-						data = RA_NAME + UDP_PARSER + "0" + UDP_PARSER + UDP_END_PARSE;
+					data = RA_NAME + UDP_PARSER + r_Result + UDP_PARSER + UDP_END_PARSE;
 				}
 				else if(messageArray[1].equals(ACTION_TO_PERFORM.ADMIN_SUSPEND_PLAYER_ACCOUNT.name()))
 				{
 					messageArray[5] = messageArray[5].trim();
 					setORBreference(messageArray[4]);
 					String r_Result = aInterfaceIDL.suspendAccount(messageArray[2], messageArray[3], messageArray[4], messageArray[5]);
-					if(!r_Result.startsWith("ERR"))
-						data = RA_NAME + UDP_PARSER + r_Result + UDP_PARSER + UDP_END_PARSE;
-					else
-						data = RA_NAME + UDP_PARSER + "0" + UDP_PARSER + UDP_END_PARSE;
+					data = RA_NAME + UDP_PARSER + r_Result + UDP_PARSER + UDP_END_PARSE;
 				}
-				else if(messageArray[1].equals(ACTION_TO_PERFORM.ADMIN_GET_PLAYER_STATUS)){
+				else if(messageArray[1].equals(ACTION_TO_PERFORM.ADMIN_GET_PLAYER_STATUS.name())){
 					messageArray[4] = messageArray[4].trim();
 					setORBreference(messageArray[4]);
 					data = RA_NAME + UDP_PARSER + 

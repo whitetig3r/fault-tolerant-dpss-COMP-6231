@@ -271,7 +271,7 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
 	public String transferAccount(String uName, String password, String oldIpAddress, String newIpAddress) {
 		GameServerORBThread.setLeaderResponded(false);
 		List<Object> tempList = new ArrayList<Object>();
-		tempList.addAll(Arrays.asList(ACTION_TO_PERFORM.PLAYER_TRANSFER_ACCOUNT,uName,password));
+		tempList.addAll(Arrays.asList(ACTION_TO_PERFORM.PLAYER_TRANSFER_ACCOUNT,uName,password,oldIpAddress,newIpAddress));
 		fifoQueue.add(tempList);
 		tempList = null;
 		while(!GameServerORBThread.hasLeaderResponded()) {
@@ -289,7 +289,7 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
 	public String suspendAccount(String uName, String password, String ipAddress, String uNameToSuspend) {
 		GameServerORBThread.setLeaderResponded(false);
 		List<Object> tempList = new ArrayList<Object>();
-		tempList.addAll(Arrays.asList(ACTION_TO_PERFORM.ADMIN_SUSPEND_PLAYER_ACCOUNT,uName,password,ipAddress));
+		tempList.addAll(Arrays.asList(ACTION_TO_PERFORM.ADMIN_SUSPEND_PLAYER_ACCOUNT,uName,password,ipAddress,uNameToSuspend));
 		fifoQueue.add(tempList);
 		tempList = null;
 		while(!GameServerORBThread.hasLeaderResponded()) {

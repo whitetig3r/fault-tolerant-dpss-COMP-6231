@@ -53,14 +53,14 @@ public class GameServerServant extends GameServerPOA {
 	private String gameServerLocation;
 	private ORB orb;
 
-	public GameServerServant(String location, ArrayList<Integer> extUdpPorts) throws UnknownServerRegionException {
+	public GameServerServant(String location, ArrayList<Integer> extUdpPorts, int intUdpPort) throws UnknownServerRegionException {
 		super();
 		this.gameServerLocation = location; 
 		this.EXT_UDP_PORTS = extUdpPorts;
+		this.INT_UDP_PORT = intUdpPort;
 		// create a region administrator account
 		createPlayerAccount("Admin","Admin","Admin","Admin", getRegionDefaultIP(), 0);
 		seedDataStore();
-		setExternalPorts();
 		runRegionUdpServer();
 	}
 	
@@ -643,28 +643,6 @@ public class GameServerServant extends GameServerPOA {
 	}
 	
 	// END OF NETWORK UTILS
-	
-	private void setExternalPorts() throws UnknownServerRegionException {
-		switch(this.gameServerLocation) {
-			case "NA": {
-				INT_UDP_PORT = Integer.valueOf(EXT_UDP_PORTS.get(0));
-				EXT_UDP_PORTS.remove(0);
-				break;
-			}
-			case "EU": {
-				INT_UDP_PORT = Integer.valueOf(EXT_UDP_PORTS.get(1));
-				EXT_UDP_PORTS.remove(1);
-				break;
-			}
-			case "AS": {
-				INT_UDP_PORT = Integer.valueOf(EXT_UDP_PORTS.get(2));
-				EXT_UDP_PORTS.remove(2);
-				break;
-			}
-			default:
-				throw new UnknownServerRegionException();
-		}
-	}
 
 	private String getRegionDefaultIP() throws UnknownServerRegionException {
 		switch(gameServerLocation) {

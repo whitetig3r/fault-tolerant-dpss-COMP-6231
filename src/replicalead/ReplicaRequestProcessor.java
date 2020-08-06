@@ -10,7 +10,6 @@ public class ReplicaRequestProcessor {
 	private static int m_checkedByPrevReplica;
 	
 	private static final String UDP_PARSER = "/";
-	private static final String UDP_END_PARSE = "$";
 	
 	private static final String LR_NAME = "LR";
 	private static final int UDP_PORT_FE = 6000;
@@ -34,10 +33,16 @@ public class ReplicaRequestProcessor {
 			
 			String l_leaderData_end_parser = m_LeaderResultProcessed + "/" + "$";
 			String l_segments_Leader[] = l_leaderData_end_parser.split(UDP_PARSER);
-			System.out.println("leader -- " + l_leaderData_end_parser);
 			String l_segments_A[] = m_Replica_A_Processed.split(UDP_PARSER);
 			//String l_segments_B[] = m_Replica_B_Processed.split(UDP_PARSER);
 					
+			for(int i=0;i<l_segments_Leader.length;i++) {
+				l_segments_Leader[i] = l_segments_Leader[i].trim(); 
+			}
+			
+			for(int i=0;i<l_segments_A.length;i++) {
+				l_segments_A[i] = l_segments_A[i].trim(); 
+			}
 			
 			// check if all results are same
 			 // || l_segments_Leader[0].equals(l_segments_B[0])
@@ -82,63 +87,10 @@ public class ReplicaRequestProcessor {
 						System.out.println("Data gram sent to replica manager l_rmdatagram - " + l_rmdatagram);
 						MainUDPThread.sendPacket(l_rmdatagram, UDP_PORT_REPLICA_MANAGER);
 					}
-					
-					
 				}
-				else // for get player status
-				{
-					// m_LeaderResultProcessed is 1/NA/0/0/EU/0/0/AS/0/0
-					String Temp_leader = m_LeaderResultProcessed.substring(2,m_LeaderResultProcessed.length());
-					String Temp_A = m_Replica_A_Processed.substring(2,m_Replica_A_Processed.length());
-					//String Temp_B = m_Replica_B_Processed.substring(2,m_Replica_B_Processed.length());
-					
-					
-					if(!l_segments_Leader[0].equals(l_segments_A[0]))
-					{
-						if(checkgetPlayerStatus(Temp_leader, Temp_A).equals("Problem"))
-							l_rmdatagram =  "RA";
-					
-						System.out.println("LocalReplicsRequestProcessing.CompareResults: Get Player Status Check l_rmdatagram - " + l_rmdatagram);
-					}
-				
-//					else if(!l_segments_Leader[0].equals(l_segments_B[0]))
-//					{
-//						if(checkgetPlayerStatus(Temp_leader, Temp_B).equals("Problem"))
-//							l_rmdatagram =  "RB";
-//						
-//						System.out.println("LocalReplicsRequestProcessing.CompareResults: Get Player Status Check l_rmdatagram - " + l_rmdatagram);
-//					}
-					
-					// Fil up the Gata gram to set FE
-					String l_Data_FE = LR_NAME ;
-					String result = "";
-					
-					// sending packet to Leader
-					for(int i = 0; i < l_segments_Leader.length; i++)
-					{
-						result  = result + UDP_PARSER + l_segments_Leader[i];
-					}
-								
-					l_Data_FE = l_Data_FE + result;
-					
-					
-					// Sending datagram to Front End the result of Leader
-					System.out.println("LocalReplicsRequestProcessing.CompareResults: to Front End - l_Data: " + l_Data_FE);
-					MainUDPThread.sendPacket(l_Data_FE, UDP_PORT_FE);
-									
-					// sending packet to Replica Manager
-					// If Replica Manager Datagram isnot empty, send it.
-					if(!l_rmdatagram.equals(""))
-					{
-						l_rmdatagram =  LR_NAME + UDP_PARSER + l_rmdatagram;
-						System.out.println("Data gram sent to replica manager l_rmdatagram - " + l_rmdatagram);
-						MainUDPThread.sendPacket(l_rmdatagram, UDP_PORT_REPLICA_MANAGER);
-					}
-				}				
-				m_HasBeenProcessed = true;
+			
+			
 			}
-			
-			
 		}
 		// If LR RA and RB have not yet returned a value
 		else
@@ -156,37 +108,5 @@ public class ReplicaRequestProcessor {
 			System.out.println("LocalReplicsRequestProcessing.CompareResults: to Front End - FEDAta: " + FEDAta);
 			MainUDPThread.sendPacket(FEDAta, UDP_PORT_FE);
 		}
-	}
-	
-	
-	private static String checkgetPlayerStatus(String A, String B)
-	{
-		String A_list[] = A.split(UDP_PARSER);
-		String B_list[] = B.split(UDP_PARSER);
-		
-		if(A_list.length != B_list.length)
-		{
-			return "Problem";
-		}
-		
-		//    NA/0/1/AS/0/1/EU/0/1/$
-		
-		for(int j = 0; j < 3; j++)
-		{
-			for(int i = 0; i < A_list.length; i++)
-			{
-				if(A_list[j*3] == B_list[i] && B_list[i] != UDP_END_PARSE)
-				{
-					if(A_list[(j*3) + 1] == B_list[i+1])
-					{
-						if(A_list[(j*3) + 2] == B_list[i+2])
-						{
-							return "Good";
-						}
-					}
-				}
-			}
-		}
-		return "Problem"; 
 	}
 }

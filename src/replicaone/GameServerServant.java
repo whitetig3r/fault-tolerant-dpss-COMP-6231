@@ -66,22 +66,23 @@ public class GameServerServant extends GameServerPOA implements Runnable {
 	private String gameServerLocation;
 	private ORB orb;
 
-	public GameServerServant(String location, ArrayList<Integer> extUdpPorts) throws UnknownServerRegionException {
+	public GameServerServant(String location, ArrayList<Integer> extUdpPorts, int intUdpPort) throws UnknownServerRegionException {
 		super();
 		this.gameServerLocation = location; 
 		this.EXT_UDP_PORTS = extUdpPorts;
+		this.INT_UDP_PORT = intUdpPort;
 		// create a region administrator account
 		createPlayerAccount("Admin","Admin","Admin","Admin", getRegionDefaultIP(), 0);
 		seedDataStore();
-		setExternalPorts();
 		orbThread = new ORBThread(createORB(defaultORBArgs));
 		orbThread.start();
 		System.out.println("ORB is running");
 	}
 	
-	public GameServerServant(String gameServerLocation2, int iNT_UDP_PORT2,
+	public GameServerServant(String gameServerLocation2, ArrayList<Integer> extUdpPorts, int iNT_UDP_PORT2,
 			ConcurrentHashMap<Character, CopyOnWriteArrayList<Player>> playerHash2) {
 		this.gameServerLocation = gameServerLocation2;
+		this.EXT_UDP_PORTS = extUdpPorts;
 		this.INT_UDP_PORT = iNT_UDP_PORT2;
 		this.playerHash = playerHash2;
 	}
@@ -89,7 +90,7 @@ public class GameServerServant extends GameServerPOA implements Runnable {
 	@Override
 	public void run() {
 		// TODO Auto-generated method stub
-		runRegionUdpServer();
+		 runRegionUdpServer();
 	}
 	
 	protected void freeServerResources() {
@@ -726,6 +727,7 @@ public class GameServerServant extends GameServerPOA implements Runnable {
 
 	private int getUDPServerPort(String region) {
 		int port = -1;
+		System.out.println("REGION -- " + region + " Ports -- " + EXT_UDP_PORTS.stream().map(Object::toString).collect(Collectors.joining(",")));
 		switch(region) {
 			case "NA": {
 				port = EXT_UDP_PORTS.get(0);
@@ -788,7 +790,7 @@ public class GameServerServant extends GameServerPOA implements Runnable {
 			// Initialize the ORB object
 			orb = ORB.init(pArgs, null);
 			POA rootPOA = POAHelper.narrow(orb.resolve_initial_references("RootPOA"));
-			GameServerServant aInterface = new GameServerServant(gameServerLocation, INT_UDP_PORT, playerHash);
+			GameServerServant aInterface = new GameServerServant(gameServerLocation, EXT_UDP_PORTS, INT_UDP_PORT, playerHash);
 			byte [] id = rootPOA.activate_object(aInterface);
 			// Obtain reference to CORBA object
 			org.omg.CORBA.Object reference_CORBA = rootPOA.id_to_reference(id);

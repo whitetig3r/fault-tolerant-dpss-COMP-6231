@@ -89,6 +89,10 @@ public class RequestProcessor {
 		{
 			String l_ParamArray[] = p_input.split("/");
 			
+			for(int i=0; i<l_ParamArray.length; i++) {
+				l_ParamArray[i] = l_ParamArray[i].trim();
+			}
+			
 			if(l_ParamArray != null)
 			{
 				
@@ -103,7 +107,7 @@ public class RequestProcessor {
 					if(l_numElements == 7)
 					{
 						
-						GameServer l_LocalGameServerReference =  getServerReference(l_ParamArray[6]);
+						GameServer l_LocalGameServerReference =  getServerReference(l_ParamArray[5]);
 						
 						if(l_LocalGameServerReference == null)
 						{
@@ -111,16 +115,11 @@ public class RequestProcessor {
 							return "0";
 						}
 						
-						String l_MethodStatus =  l_LocalGameServerReference.createPlayerAccount(l_ParamArray[1], l_ParamArray[2], l_ParamArray[3], l_ParamArray[4], l_ParamArray[5], Integer.parseInt(l_ParamArray[6]));
-						if(l_MethodStatus.startsWith("Successfully created account for player with username"))
-						{
-							return l_MethodStatus;
-						}
-						return "0";
+						return l_LocalGameServerReference.createPlayerAccount(l_ParamArray[1], l_ParamArray[2], l_ParamArray[3], l_ParamArray[4], l_ParamArray[5], Integer.parseInt(l_ParamArray[6].trim()));
 					}
 					else
 					{
-						System.out.println("LocalOrbProcessing.performRMI : Eror: Have not parsed enough params for create player account/n");
+						System.out.println("LocalOrbProcessing.performRMI : Error: Have not parsed enough params for create player account/n");
 						return "0";
 					}
 				}
@@ -141,16 +140,11 @@ public class RequestProcessor {
 							return "0";
 						}
 						
-						String l_MethodStatus =  l_LocalGameServerReference.playerSignIn(l_ParamArray[1], l_ParamArray[2], l_ParamArray[3]);
-						if(l_MethodStatus.startsWith("Successfully signed in player with username"))
-						{
-							return l_MethodStatus;
-						}
-						return "0";
+						return l_LocalGameServerReference.playerSignIn(l_ParamArray[1], l_ParamArray[2], l_ParamArray[3]);
 					}
 					else
 					{
-						System.out.println("LocalOrbProcessing.performRMI : Eror: Have not parsed enough params for player sign in/n");
+						System.out.println("LocalOrbProcessing.performRMI : Error: Have not parsed enough params for player sign in/n");
 						return "0";
 					}
 				}
@@ -171,16 +165,11 @@ public class RequestProcessor {
 							return "0";
 						}
 						
-						String l_MethodStatus =  l_LocalGameServerReference.playerSignOut(l_ParamArray[1], l_ParamArray[2]);
-						if(l_MethodStatus.startsWith("Successfully signed out player with username"))
-						{
-							return l_MethodStatus;
-						}
-						return "0";
+						return l_LocalGameServerReference.playerSignOut(l_ParamArray[1], l_ParamArray[2]);
 					}
 					else
 					{
-						System.out.println("LocalOrbProcessing.performRMI : Eror: Have not parsed enough params for player sign out/n");
+						System.out.println("LocalOrbProcessing.performRMI : Error: Have not parsed enough params for player sign out/n");
 						return "0";
 					}
 				}
@@ -198,17 +187,11 @@ public class RequestProcessor {
 							System.out.println("LocalOrbProcessing.performRMI : Error - Cannot perform RMI, GameServer = NULL/n");
 							return "0";
 						}
-						
-						String l_MethodStatus =  l_LocalGameServerReference.adminSignIn(l_ParamArray[1], l_ParamArray[2], l_ParamArray[3]);
-						if(l_MethodStatus.startsWith("Successfully signed in admin"))
-						{
-							return l_MethodStatus;
-						}
-						return "0";
+						return l_LocalGameServerReference.adminSignIn(l_ParamArray[1], l_ParamArray[2], l_ParamArray[3]);
 					}
 					else
 					{
-						System.out.println("LocalOrbProcessing.performRMI : Eror: Have not parsed enough params for admin sign in/n");
+						System.out.println("LocalOrbProcessing.performRMI : Error: Have not parsed enough params for admin sign in/n");
 						return "0";
 					}
 				}
@@ -229,16 +212,12 @@ public class RequestProcessor {
 							return "0";
 						}
 						
-						String l_MethodStatus =  l_LocalGameServerReference.adminSignOut(l_ParamArray[1], l_ParamArray[2]);
-						if(l_MethodStatus.startsWith("Successfully signed out admin"))
-						{
-							return l_MethodStatus;
-						}
-						return "0";
+						return l_LocalGameServerReference.adminSignOut(l_ParamArray[1], l_ParamArray[2]);
+
 					}
 					else
 					{
-						System.out.println("LocalOrbProcessing.performRMI : Eror: Have not parsed enough params for admin sign out/n");
+						System.out.println("LocalOrbProcessing.performRMI : Error: Have not parsed enough params for admin sign out/n");
 						return "0";
 					}
 				}
@@ -259,17 +238,11 @@ public class RequestProcessor {
 							return "0";
 						}
 						
-						String l_MethodStatus =  l_LocalGameServerReference.transferAccount(l_ParamArray[1], l_ParamArray[2], l_ParamArray[3], l_ParamArray[4]);
-						if(l_MethodStatus.startsWith("Successfully TRANSFERRED ACCOUNT for player"))
-						{
-							return l_MethodStatus;
-						}
-						System.out.println("LocalOrbProcessing.performRMI : Player Account Transfer Request - " + l_ParamArray[1] + l_ParamArray[2] + l_ParamArray[3] + l_ParamArray[4]);
-						return "0";
+						return l_LocalGameServerReference.transferAccount(l_ParamArray[1], l_ParamArray[2], l_ParamArray[3], l_ParamArray[4]);
 					}
 					else
 					{
-						System.out.println("LocalOrbProcessing.performRMI : Eror: Have not parsed enough params for player account transfer/n");
+						System.out.println("LocalOrbProcessing.performRMI : Error: Have not parsed enough params for player account transfer/n");
 						return "0";
 					}
 				}
@@ -290,16 +263,11 @@ public class RequestProcessor {
 							return "0";
 						}
 						
-						String l_MethodStatus =  l_LocalGameServerReference.getPlayerStatus(l_ParamArray[1], l_ParamArray[2], l_ParamArray[3]);
-						if(!l_MethodStatus.equals(""))
-						{
-							return l_MethodStatus;
-						}
-						return "0";
+						return l_LocalGameServerReference.getPlayerStatus(l_ParamArray[1], l_ParamArray[2], l_ParamArray[3]);
 					}
 					else
 					{
-						System.out.println("LocalOrbProcessing.performRMI : Eror: Have not parsed enough params for get player status/n");
+						System.out.println("LocalOrbProcessing.performRMI : Error: Have not parsed enough params for get player status/n");
 						return "0";
 					}
 				}
@@ -320,21 +288,16 @@ public class RequestProcessor {
 							return "0";
 						}
 						
-						String l_MethodStatus =  l_LocalGameServerReference.suspendAccount(l_ParamArray[1], l_ParamArray[2], l_ParamArray[3], l_ParamArray[4]);
-						if(l_MethodStatus.startsWith("Successfully suspended account for player with username"))
-						{
-							return l_MethodStatus;
-						}
-						return "0";
+						return l_LocalGameServerReference.suspendAccount(l_ParamArray[1], l_ParamArray[2], l_ParamArray[3], l_ParamArray[4]);
 					}
 					else
 					{
-						System.out.println("LocalOrbProcessing.performRMI : Eror: Have not parsed enough params for suspend account/n");
+						System.out.println("LocalOrbProcessing.performRMI : Error: Have not parsed enough params for suspend account/n");
 						return "0";
 					}
 				} 
 			}
-			System.out.println("LocalOrbProcessing.performRMI : Eror: Parsing for method selection not done right");
+			System.out.println("LocalOrbProcessing.performRMI : Error: Parsing for method selection not done right");
 			return "0";
 			
 		}
@@ -350,11 +313,11 @@ public class RequestProcessor {
 				System.out.println("Starting Replica LEAD");
 				// Creating Instances of Local Servers - North America, Europe and Asia
 				GameServerNA l_GameServer_NorthAmerica = new GameServerNA();
-				GameServerAS l_GameServer_Asia = new GameServerAS();
 				GameServerEU l_GameServer_Europe = new GameServerEU();
+				GameServerAS l_GameServer_Asia = new GameServerAS();
 				l_GameServer_NorthAmerica.start();
-				l_GameServer_Asia.start();
 				l_GameServer_Europe.start();
+				l_GameServer_Asia.start();
 			}
 		}
 }

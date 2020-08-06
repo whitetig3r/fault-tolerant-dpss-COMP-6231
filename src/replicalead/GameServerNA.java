@@ -21,7 +21,7 @@ public class GameServerNA extends Thread {
 		      POA rootpoa = POAHelper.narrow(orb.resolve_initial_references("RootPOA"));
 		      rootpoa.the_POAManager().activate();
 	
-		      GameServerServant gameServer = new GameServerServant("NA", new ArrayList<>(Arrays.asList(10989,10990,10991)));
+		      GameServerServant gameServer = new GameServerServant("NA", new ArrayList<>(Arrays.asList(8990,8991)), 8989);
 		      gameServer.setORB(orb); 
 	
 		      org.omg.CORBA.Object ref = rootpoa.servant_to_reference(gameServer);
