@@ -43,7 +43,7 @@ public class ReplicaRequestProcessor {
 				l_segments_A[i] = l_segments_A[i].trim(); 
 			}
 			
-			for(int i=0;i<l_segments_A.length;i++) {
+			for(int i=0;i<l_segments_B.length;i++) {
 				l_segments_B[i] = l_segments_B[i].trim(); 
 			}
 			
