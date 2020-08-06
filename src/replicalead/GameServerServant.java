@@ -36,7 +36,6 @@ import exceptions.BadUserNameException;
 import exceptions.PlayerRemoveException;
 import exceptions.TransferAccountException;
 import exceptions.UnknownServerRegionException;
-import frontend.GameServerPOA;
 import models.Player;
 
 public class GameServerServant extends GameServerPOA {

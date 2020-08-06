@@ -166,8 +166,6 @@ public class MainUDPThread extends Thread {
 			System.out.println("UDP_replicaLeader.sendMulticastPacket_Replicas : p_Data - "+ p_Data);
 			
 			dgram = new DatagramPacket(buffer, buffer.length, InetAddress.getByName(UDP_ADDR_REPLICA_COMMUNICATION_MULTICAST), UDP_PORT_REPLICA_LEAD_MULTICAST);
-			System.out.println("DGRAM -- " + new String(dgram.getData()));
-			System.out.println("DGRAM Length -- " + dgram.getLength());
 			socket.send(dgram);
 		} 
 	

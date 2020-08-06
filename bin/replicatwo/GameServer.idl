@@ -1,0 +1,15 @@
+module replicatwo
+{
+  interface GameServer
+  {
+    string createPlayerAccount(in string fName, in string lName, in string uName, in string password, in string ipAddress, in long age);
+	string playerSignIn(in string uName, in string password, in string ipAddress);
+	string playerSignOut(in string uName, in string ipAddress);
+	string adminSignIn(in string uName, in string password, in string ipAddress);
+	string adminSignOut(in string uName, in string ipAddress);
+	string getPlayerStatus(in string uName, in string password, in string ipAddress);
+	string transferAccount(in string uName, in string password, in string oldIpAddress, in string newIpAddress);
+	string suspendAccount(in string uName, in string password, in string ipAddress, in string uNameToSuspend); 
+	boolean initiateCorruption();
+  };
+};

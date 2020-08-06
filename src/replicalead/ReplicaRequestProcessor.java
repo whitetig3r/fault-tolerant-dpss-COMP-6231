@@ -51,47 +51,47 @@ public class ReplicaRequestProcessor {
 			if(l_segments_Leader[0].equals(l_segments_A[0]) || l_segments_Leader[0].equals(l_segments_B[0]))
 			{
 				String l_rmdatagram = "";
-				
-				if(l_segments_Leader.length < 4 && l_segments_A.length < 4  && l_segments_B.length < 4)
+				if(!l_segments_Leader[0].equals(l_segments_A[0]))
 				{
-					if(!l_segments_Leader[0].equals(l_segments_A[0]))
-					{
-						l_rmdatagram = "RA";
-					}
+					l_rmdatagram = "RA";
+				}
+			
+				else if(!l_segments_Leader[0].equals(l_segments_B[0]))
+				{
+					l_rmdatagram = "RB";
+				}
 				
-					else if(!l_segments_Leader[0].equals(l_segments_B[0]))
-					{
-						l_rmdatagram = "RB";
-					}
-					
-					// Create a data packet for FE
-					String l_Data_FE = LR_NAME;
-					String result = "";
-					
-					// sending packet to Leader
-					for(int i = 0; i < l_segments_Leader.length; i++)
-					{
-						result  = result + UDP_PARSER + l_segments_Leader[i];
-					}
+				// Create a data packet for FE
+				String l_Data_FE = LR_NAME;
+				String result = "";
+				
+				// sending packet to Leader
+				for(int i = 0; i < l_segments_Leader.length; i++)
+				{
+					result  = result + UDP_PARSER + l_segments_Leader[i];
+				}
+							
+				l_Data_FE = l_Data_FE + result;
+				
+				
+				// Sending datagram to Front End the result of Leader
+				System.out.println("LocalReplicsRequestProcessing.CompareResults: to Front End - l_Data: " + l_Data_FE);
+				MainUDPThread.sendPacket(l_Data_FE, UDP_PORT_FE);
 								
-					l_Data_FE = l_Data_FE + result;
-					
-					
-					// Sending datagram to Front End the result of Leader
-					System.out.println("LocalReplicsRequestProcessing.CompareResults: to Front End - l_Data: " + l_Data_FE);
-					MainUDPThread.sendPacket(l_Data_FE, UDP_PORT_FE);
-									
-					// sending packet to Replica Manager
-					// If Replica Manager Datagram is not empty, send it.
-					if(!l_rmdatagram.equals(""))
-					{
-						l_rmdatagram =  LR_NAME + UDP_PARSER + l_rmdatagram;
-						System.out.println("Data gram sent to replica manager l_rmdatagram - " + l_rmdatagram);
-						MainUDPThread.sendPacket(l_rmdatagram, UDP_PORT_REPLICA_MANAGER);
-					}
+				// sending packet to Replica Manager
+				// If Replica Manager Datagram is not empty, send it.
+				if(!l_rmdatagram.equals(""))
+				{
+					l_rmdatagram =  LR_NAME + UDP_PARSER + l_rmdatagram;
+					System.out.println("Data gram sent to replica manager l_rmdatagram - " + l_rmdatagram);
+					MainUDPThread.sendPacket(l_rmdatagram, UDP_PORT_REPLICA_MANAGER);
 				}
 			
 			}
+			
+			m_Replica_A_Processed = null;
+			m_Replica_B_Processed = null;
+			m_LeaderResultProcessed = null;
 		}
 		// If LR RA and RB have not yet returned a value
 		else

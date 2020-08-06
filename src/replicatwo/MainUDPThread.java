@@ -29,17 +29,20 @@ class ORBThread extends Thread
 	}
 }
 
-class ReplicaManagerListenUDPThread extends Thread
+class ReplicaManagerBreakerListenUDPThread extends Thread
 {
+	protected static int REPLICA_BREAKER_PORT = 9393;
 	private int aPort;
 	private boolean bCrashed;
 	private boolean bShouldRestart;
 	private DatagramSocket aDatagramSocket;
 	private DatagramPacket requestFromReplicaManager;
+	private GameServer aInterfaceIDL;
 	private byte [] buffer;
 	private String [] messageArray;
 	
 	private final String UDP_PARSER = "/";
+	protected static String BRE_NAME = "BRE";
 	private int UDP_BUFFER_SIZE = 1200;
 	private static final String RM_NAME = "RM";
 
@@ -55,7 +58,7 @@ class ReplicaManagerListenUDPThread extends Thread
 		  RESTART_REPLICA
 	}
 	
-	protected ReplicaManagerListenUDPThread(int pPort) throws SocketException
+	protected ReplicaManagerBreakerListenUDPThread(int pPort) throws SocketException
 	{
 		aPort = pPort;
 		bCrashed = false;
@@ -101,6 +104,16 @@ class ReplicaManagerListenUDPThread extends Thread
 				{
 					bShouldRestart = true;
 				}
+			} else if(messageArray[0].equals(BRE_NAME)) {
+				setORBreference("132.168.2.22");
+				boolean na = aInterfaceIDL.initiateCorruption();
+				setORBreference("93.168.2.22");
+				boolean eu = aInterfaceIDL.initiateCorruption();
+				setORBreference("182.168.2.22");
+				boolean as = aInterfaceIDL.initiateCorruption();
+				if(na && eu && as && sendCorruptionSuccessPacket("success"))
+					System.out.println("Sent confirmation to breaker server");
+					
 			}
 		}
 		catch (IOException e)
@@ -108,6 +121,69 @@ class ReplicaManagerListenUDPThread extends Thread
 			aDatagramSocket.close();
 			bCrashed = true;
 		}
+	}
+	
+	private boolean setORBreference(String pIPAddress) throws IOException
+	{
+		ORB orb = ORB.init(new String [1], null);
+		BufferedReader bufferedReader;
+		// Get the reference to the CORBA objects from the file
+		if(pIPAddress.length() >= 3 && pIPAddress.substring(0,3).equals("132"))
+		{
+			bufferedReader = new BufferedReader(new FileReader("NA_BIOR.txt"));
+		}
+		else if(pIPAddress.length() >= 2 && pIPAddress.substring(0,2).equals("93"))
+		{
+			bufferedReader = new BufferedReader(new FileReader("EU_BIOR.txt"));
+		}
+		else if(pIPAddress.length() >= 3 && pIPAddress.substring(0,3).equals("182"))
+		{
+			bufferedReader = new BufferedReader(new FileReader("AS_BIOR.txt"));
+		}
+		else
+		{
+			System.out.println("Invalid GeoLocation");
+			return false;
+		}
+		String stringORB = bufferedReader.readLine();
+		bufferedReader.close();
+		// Transform the reference string to CORBA object
+		org.omg.CORBA.Object reference_CORBA = orb.string_to_object(stringORB);
+		aInterfaceIDL = GameServerHelper.narrow(reference_CORBA);
+		
+		orb = null;
+		stringORB = null;
+		bufferedReader = null;
+		
+		return true;
+	}
+
+	private boolean sendCorruptionSuccessPacket(String p_Data) {
+			DatagramSocket aSocket = null;
+			try 
+			{
+				aSocket = new DatagramSocket();    
+				byte [] m = p_Data.getBytes();
+				InetAddress aHost = InetAddress.getByName("localhost");
+				int serverPort = REPLICA_BREAKER_PORT;		                                                 
+				DatagramPacket request = new DatagramPacket(m,  p_Data.length(), aHost, serverPort);
+				aSocket.send(request);		
+				return true;
+			}
+			catch (SocketException e)
+			{
+				System.out.println("Socket: " + e.getMessage());
+			}
+			catch (IOException e)
+			{
+				System.out.println("IO: " + e.getMessage());
+			}
+			finally 
+			{
+				if(aSocket != null) aSocket.close();
+			}
+			
+			return false;
 	}
 }
 
@@ -147,7 +223,7 @@ class MainUDPThread extends Thread
 	private DatagramPacket replyToLeaderPacket;
 	private String data;
 	// For receiving from replica manager UDP
-	protected ReplicaManagerListenUDPThread replicaManagerListener;
+	protected ReplicaManagerBreakerListenUDPThread replicaManagerListener;
 	
 	protected static int UDP_PORT_REPLICA_B = 3000;
 	
@@ -159,7 +235,7 @@ class MainUDPThread extends Thread
 	protected static String RA_EU_NAME = "EU";
 	protected static String RA_AS_NAME = "AS";
 	protected static int UDP_PORT_REPLICA_LEAD = 4000;
-	
+
 	protected static int UDP_PORT_REPLICA_LEAD_MULTICAST = 4446;
 	
 	protected static String UDP_ADDR_REPLICA_COMMUNICATION_MULTICAST = "224.0.0.2";
@@ -186,7 +262,7 @@ class MainUDPThread extends Thread
 			{
 				System.out.println("Crash detected in ReplicaA Replica Manager UDP Thread, restarting UDP");
 				try {
-					replicatwo.replicaManagerListener = new ReplicaManagerListenUDPThread(UDP_PORT_REPLICA_B);
+					replicatwo.replicaManagerListener = new ReplicaManagerBreakerListenUDPThread(UDP_PORT_REPLICA_B);
 				} catch (SocketException e) {
 					System.out.println("ReplicaA Replica Manager creating failed");
 				}
@@ -204,7 +280,7 @@ class MainUDPThread extends Thread
 			aMulticastSocket = new MulticastSocket(UDP_PORT_REPLICA_LEAD_MULTICAST);
 			aMulticastSocket.joinGroup(InetAddress.getByName(UDP_ADDR_REPLICA_COMMUNICATION_MULTICAST));
 			aSendSocket = new DatagramSocket();
-			replicaManagerListener = new ReplicaManagerListenUDPThread(UDP_PORT_REPLICA_B);
+			replicaManagerListener = new ReplicaManagerBreakerListenUDPThread(UDP_PORT_REPLICA_B);
 			// Start the UDP communication for replicatwo
 			System.out.println("UDP Running");
 			replicaManagerListener.start();
@@ -258,9 +334,9 @@ class MainUDPThread extends Thread
 		try
 		{
 			// Create Game Servers within each thread
-			aNAGameServer = new GameServerServant(RA_NA_NAME, new ArrayList<>(Arrays.asList(8990,8991)),8989);
-			aEUGameServer = new GameServerServant(RA_EU_NAME, new ArrayList<>(Arrays.asList(8989,8991)),8990);
-			aASGameServer = new GameServerServant(RA_AS_NAME, new ArrayList<>(Arrays.asList(8989,8990)),8991);
+			aNAGameServer = new GameServerServant(RA_NA_NAME, new ArrayList<>(Arrays.asList(9990,9991)),9989);
+			aEUGameServer = new GameServerServant(RA_EU_NAME, new ArrayList<>(Arrays.asList(9989,9991)),9990);
+			aASGameServer = new GameServerServant(RA_AS_NAME, new ArrayList<>(Arrays.asList(9989,9990)),9991);
 			
 			// Start the Threads running each runnable Game Server
 			aNAThread = new Thread(aNAGameServer);
@@ -330,6 +406,7 @@ class MainUDPThread extends Thread
 				messageArray[i] = messageArray[i].trim();
 			}
 			
+			
 			if(messageArray[0].equals(LR_NAME))
 			{
 				messageArray[1] = messageArray[1].trim();
@@ -398,6 +475,7 @@ class MainUDPThread extends Thread
 				System.out.println("Sent back results to replica leader : " + data.toString());
 				data = "";
 			}
+			
 		}
 		catch (IOException e)
 		{
