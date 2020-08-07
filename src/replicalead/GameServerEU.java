@@ -26,7 +26,6 @@ public class GameServerEU extends Thread {
 		      org.omg.CORBA.Object ref = rootpoa.servant_to_reference(gameServer);
 			
 			  String ior = orb.object_to_string(ref);
-			  System.out.println(ior);
 					
 			  PrintWriter file = new PrintWriter("ior_Europe.txt");
 			  file.println(ior);
@@ -43,12 +42,11 @@ public class GameServerEU extends Thread {
 		      NameComponent path[] = ncRef.to_name( name );
 		      ncRef.rebind(path, href);
 	
-		      System.out.println("GameServer EU ready and waiting ...");
-	
+		      System.out.println("INFO -- GameServer EU is up");
 		      orb.run();
 		} catch (Exception e) {
-		    System.err.println("ERROR: " + e);
-		    e.printStackTrace(System.out);
+		    System.err.println("ERR: " + e);
+		    e.printStackTrace();
 		}
 
 	}

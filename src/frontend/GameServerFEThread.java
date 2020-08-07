@@ -6,7 +6,7 @@ import java.net.DatagramSocket;
 import java.net.SocketException;
 
 public class GameServerFEThread extends Thread {
-	private DatagramSocket dgSocket;
+	private DatagramSocket frontEndSocket;
 	private DatagramPacket request;
 	private byte [] buffer;
 	private String [] messageArray;
@@ -19,7 +19,7 @@ public class GameServerFEThread extends Thread {
 		threadDown = false;
 		buffer = new byte [1200];
 		try {
-			dgSocket = new DatagramSocket(port);
+			frontEndSocket = new DatagramSocket(port);
 		} catch (SocketException e) {
 			threadDown = true;
 		}
@@ -36,7 +36,7 @@ public class GameServerFEThread extends Thread {
 		while(true) {
 			try {
 				request = new DatagramPacket(buffer, buffer.length);
-				dgSocket.receive(request);
+				frontEndSocket.receive(request);
 				messageArray = (new String(request.getData())).split("/");
 				if(messageArray[0].equals("LR"))
 				{
@@ -44,7 +44,7 @@ public class GameServerFEThread extends Thread {
 					GameServerORBThread.setLeaderResponded(true);
 				}
 			} catch (IOException e) {
-				dgSocket.close();
+				frontEndSocket.close();
 				threadDown = true;
 			}
 		}

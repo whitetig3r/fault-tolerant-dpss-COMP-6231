@@ -42,12 +42,12 @@ public class GameServerNA extends Thread {
 		      NameComponent path[] = ncRef.to_name( name );
 		      ncRef.rebind(path, href);
 	
-		      System.out.println("GameServer NA ready and waiting ...");
+		      System.out.println("INFO -- GameServer NA is up");
 		      orb.run();
 	 
 		} catch (Exception e) {
-		    System.err.println("ERROR: " + e);
-		    e.printStackTrace(System.out);
+		    System.err.println("ERR: " + e);
+		    e.printStackTrace();
 		}
 
 	}

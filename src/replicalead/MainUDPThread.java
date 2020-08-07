@@ -11,20 +11,20 @@ import org.omg.PortableServer.POAPackage.WrongPolicy;
 
 
 public class MainUDPThread extends Thread {
-	private static final int UDP_PORT_REPLICA_LEAD = 4000;
-	private static final int UDP_PORT_REPLICA_LEAD_MULTICAST = 4446;
-	private static final String UDP_ADDR_REPLICA_COMMUNICATION_MULTICAST = "224.0.0.2";
+	private static final int REPLICA_LEAD_PORT = 4000;
+	private static final int REPLICA_LEAD_MULTICAST_PORT = 4446;
+	private static final String REPLICA_COMMUNICATION_MULTICAST_ADDR = "224.0.0.2";
 	
-	private static final String UDP_PARSER = "/";
-	private static final int UDP_BUFFER_SIZE = 1200;
-	private static final String LR_NAME = "LR";
+	private static final String MSG_SEP = "/";
+	private static final int BUFFER_SIZE = 1200;
+	private static final String NAME_REPLICA_LEAD = "LR";
 	
-	private String m_UDPDataGram_from_stripped;
+	private String extractedDatagram;
 	
 	@Override
 	public void run() {		
 		try {
-			set_UDP_Server_Online();
+			startUdpServer();
 		} 
 		catch (Exception e) {
 			e.printStackTrace();
@@ -34,75 +34,74 @@ public class MainUDPThread extends Thread {
 	
 	MainUDPThread(){ }
 	
-	protected void set_UDP_Server_Online() throws InvalidName, ServantAlreadyActive, WrongPolicy, ObjectNotActive, AdapterInactive, InterruptedException {	
+	protected void startUdpServer() throws InvalidName, ServantAlreadyActive, WrongPolicy, ObjectNotActive, AdapterInactive, InterruptedException {	
 		DatagramSocket aSocket = null;
 		try {
-	    	aSocket = new DatagramSocket(UDP_PORT_REPLICA_LEAD);
-			System.out.println("UDP_replicaLeader.setUDPServerOnline: UDP_replicaLeader going online.");
+	    	aSocket = new DatagramSocket(REPLICA_LEAD_PORT);
+			System.out.println("REPLICA LEADER -- UDP Thread is going online!");
  			while(true){  
- 				byte[] buffer = new byte[UDP_BUFFER_SIZE];
+ 				byte[] buffer = new byte[BUFFER_SIZE];
  				DatagramPacket request = new DatagramPacket(buffer, buffer.length);
   				aSocket.receive(request);     
-  				String l_result = new String(request.getData(), "UTF-8");
+  				String requestData = new String(request.getData(), "UTF-8");
   				
-  				if(l_result != null)
+  				if(requestData != null)
   				{
-  					String l_senderName = parseSenderName(l_result);
-  					if(l_senderName != null)
+  					String requestSender = extractSender(requestData);
+  					if(requestSender != null)
   					{
-  						switch(l_senderName) 
+  						switch(requestSender) 
   						{
   				    		case "FE":
-  				    				System.out.println("Receiving data from FE.");
-  				    				RequestProcessor l_LocalOrbProcessing = new RequestProcessor();
-  				    				ReplicaRequestProcessor.m_HasBeenProcessed = false;
-  				    				if(m_UDPDataGram_from_stripped != "")
+  				    				System.out.println("Receiving Datagram from Front End...");
+  				    				RequestProcessor requestProcessorFE = new RequestProcessor();
+  				    				ReplicaRequestProcessor.requestProcessed = false;
+  				    				if(extractedDatagram != "")
   				    				{
   				    				
-  	  				    				String l_multiCastDGram_replica =  LR_NAME + UDP_PARSER + m_UDPDataGram_from_stripped;
-  				    					System.out.println("UDP_replicaLeader.set_UDP_Server_Online : l_multiCastDGram_replica - " + l_multiCastDGram_replica);
-  				    					ReplicaRequestProcessor.m_LeaderResultProcessed = l_LocalOrbProcessing.performRMI(m_UDPDataGram_from_stripped);
-  	  				    				sendMulticastPacket_Replicas(l_multiCastDGram_replica);
+  	  				    				String multicastDatagramData =  NAME_REPLICA_LEAD + MSG_SEP + extractedDatagram;
+  				    					System.out.println("Datagram Data sent to Front End - " + multicastDatagramData);
+  				    					ReplicaRequestProcessor.leaderResponse = requestProcessorFE.performORBAction(extractedDatagram);
+  	  				    				sendMulticastToReplicaGroups(multicastDatagramData);
   				    					
   				    				}	    	
   				    				
-  				    				l_LocalOrbProcessing = null;
-  				    				m_UDPDataGram_from_stripped = "";  				    				
+  				    				requestProcessorFE = null;
+  				    				extractedDatagram = "";  				    				
   				    				break;
-  				    
+  				    				
   				    		case "RM":
-  				    				System.out.println("Receiving data from RM: m_UDPDataGram_from_stripped - " + m_UDPDataGram_from_stripped);
-  				    				RequestProcessor l_LocalRMRequestProcessing = new RequestProcessor();
-  				    				l_LocalRMRequestProcessing.ProcessRMRequests(m_UDPDataGram_from_stripped);
-  				    				m_UDPDataGram_from_stripped = "";
+  				    				System.out.println("Receiving Datagram from Replica Manager... - " + extractedDatagram);
+  				    				RequestProcessor requestProcessorRM = new RequestProcessor();
+  				    				requestProcessorRM.ProcessRMRequests(extractedDatagram);
+  				    				extractedDatagram = "";
   				    			break;
   				    		
   				    		case "RA":
   				    				// result of a certain request
-  				    				System.out.println("Receiving data from RA: m_UDPDataGram_from_stripped - " + m_UDPDataGram_from_stripped);
+  				    				System.out.println("Receiving Datagram from Replica 1... - " + extractedDatagram);
   				    				
-  				    				if(m_UDPDataGram_from_stripped != "") {
-  				    					ReplicaRequestProcessor.m_Replica_A_Processed = m_UDPDataGram_from_stripped;
-  				    					ReplicaRequestProcessor.CompareResults();
+  				    				if(extractedDatagram != "") {
+  				    					ReplicaRequestProcessor.replicaOneResponse = extractedDatagram;
+  				    					ReplicaRequestProcessor.verifyConsistentResults();
   				    				}
   				    				
-  				    				m_UDPDataGram_from_stripped = "";
-  				    				
+  				    				extractedDatagram = "";
   				    			break;
   				    		
   				    		case "RB":
   				    				// result of a certain request
-  				    			System.out.println("Receiving data from RB: m_UDPDataGram_from_stripped - " + m_UDPDataGram_from_stripped);
-  				    			if(m_UDPDataGram_from_stripped != ""){
-				    					ReplicaRequestProcessor.m_Replica_B_Processed = m_UDPDataGram_from_stripped;
-				    					ReplicaRequestProcessor.CompareResults();
+  				    			System.out.println("Receiving Datagram from Replica 2... - " + extractedDatagram);
+  				    			if(extractedDatagram != ""){
+				    					ReplicaRequestProcessor.replicaTwoResponse = extractedDatagram;
+				    					ReplicaRequestProcessor.verifyConsistentResults();
 				    				}
 				    				
-				    				m_UDPDataGram_from_stripped = "";
+				    				extractedDatagram = "";
   				    			break;
-  				    		
+  				    			
   				    		default:
-  				    				System.out.println("Unknown Sender. Protocol not being followed");
+  				    				System.out.println("ERR: Sender is UNKNOWN.");
   				    				break;
   						}	
   					}
@@ -123,17 +122,16 @@ public class MainUDPThread extends Thread {
 		}
     }
 	
-	public static boolean sendPacket(String p_Data, int p_portNumber) {
+	public static boolean sendPacket(String requestData, int port) {
 		DatagramSocket aSocket = null;
 		try 
 		{
 			aSocket = new DatagramSocket();    
-			byte [] m = p_Data.getBytes();
+			byte [] m = requestData.getBytes();
 			InetAddress aHost = InetAddress.getByName("localhost");
-			int serverPort = p_portNumber;		                                                 
-			DatagramPacket request = new DatagramPacket(m,  p_Data.length(), aHost, serverPort);
+			int serverPort = port;		                                                 
+			DatagramPacket request = new DatagramPacket(m,  requestData.length(), aHost, serverPort);
 			aSocket.send(request);		
-			System.out.println("p_Data -- " + p_Data + " port --" + p_portNumber);
 			return true;
 		}
 		catch (SocketException e)
@@ -152,7 +150,7 @@ public class MainUDPThread extends Thread {
 		return false;
 	}
 	
-	protected boolean sendMulticastPacket_Replicas(String p_Data) throws IOException, InterruptedException
+	protected boolean sendMulticastToReplicaGroups(String requestData) throws IOException, InterruptedException
 	{
 		DatagramSocket socket = null; 
 
@@ -160,13 +158,13 @@ public class MainUDPThread extends Thread {
 		{
 			socket = new DatagramSocket();
 
-			byte[] buffer = p_Data.getBytes();
-			DatagramPacket dgram;
+			byte[] buffer = requestData.getBytes();
+			DatagramPacket dataGram;
 			
-			System.out.println("UDP_replicaLeader.sendMulticastPacket_Replicas : p_Data - "+ p_Data);
+			System.out.println("Dispatching multicast request to replica groups -- "+ requestData);
 			
-			dgram = new DatagramPacket(buffer, buffer.length, InetAddress.getByName(UDP_ADDR_REPLICA_COMMUNICATION_MULTICAST), UDP_PORT_REPLICA_LEAD_MULTICAST);
-			socket.send(dgram);
+			dataGram = new DatagramPacket(buffer, buffer.length, InetAddress.getByName(REPLICA_COMMUNICATION_MULTICAST_ADDR), REPLICA_LEAD_MULTICAST_PORT);
+			socket.send(dataGram);
 		} 
 	
 		catch (SocketException e)
@@ -185,25 +183,22 @@ public class MainUDPThread extends Thread {
 		return false;
 	}
 	
-	
-	
 	// Parse the datagram and extract the senders name into a String Array
-	protected String parseSenderName(String p_input) {
-		String l_segments[] = p_input.split(UDP_PARSER);
-		if(l_segments != null)
+	protected String extractSender(String responseData) {
+		String extractedParts[] = responseData.split(MSG_SEP);
+		if(extractedParts != null)
 		{
-			m_UDPDataGram_from_stripped = p_input.substring(3, p_input.length());
-			//System.out.println("UDP_replicaLeader.parseSenderName: m_UDPDataGram_from_stripped - " + m_UDPDataGram_from_stripped);
-			return l_segments[0];
+			extractedDatagram = responseData.substring(3, responseData.length());
+			return extractedParts[0];
 		}
-		System.out.println("UDP_replicaLeader.parseSenderName: failed to parse udp packet data");
+		System.out.println("ERR: Failed to extract sender information");
 		return null;
 	}
 	
 		
 	public static void main(String[] args)  
 	{
-		MainUDPThread m_UDP_replicaLeader = new MainUDPThread();
-		m_UDP_replicaLeader.start();
+		MainUDPThread replicaLeaderThread = new MainUDPThread();
+		replicaLeaderThread.start();
 	}
 }

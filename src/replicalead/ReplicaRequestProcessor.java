@@ -2,113 +2,104 @@ package replicalead;
 
 public class ReplicaRequestProcessor {
 
-	static String m_LeaderResultProcessed;
-	static String m_Replica_A_Processed;
-	static String m_Replica_B_Processed;
-	static boolean m_HasBeenProcessed;
+	static String leaderResponse;
+	static String replicaOneResponse;
+	static String replicaTwoResponse;
+	static boolean requestProcessed;
 	
-	private static int m_checkedByPrevReplica;
+	private static int replicaResponsePendingCounter;
 	
-	private static final String UDP_PARSER = "/";
+	private static final String MSG_SEP = "/";
 	
-	private static final String LR_NAME = "LR";
-	private static final int UDP_PORT_FE = 6000;
-	private static final int UDP_PORT_REPLICA_MANAGER = 5000;
+	private static final String NAME_REPLICA_LEAD = "LR";
+	private static final int FRONT_END_PORT = 6000;
+	private static final int REPLICA_MANAGER_PORT = 5000;
 	
-	protected static void CompareResults() {
-		System.out.println("Result Processed By Leader - " + m_LeaderResultProcessed);
-		System.out.println("Result Processed By Replica A - " + m_Replica_A_Processed);
-		System.out.println("Result Processed By Replica B - " + m_Replica_B_Processed);
+	protected static void verifyConsistentResults() {
 		
-		if(m_LeaderResultProcessed != null && m_Replica_A_Processed != null  && m_Replica_B_Processed != null)
+		if(leaderResponse != null && replicaOneResponse != null  && replicaTwoResponse != null)
 		{
-			m_checkedByPrevReplica = 0;
+			replicaResponsePendingCounter = 0;
 	
-			if(m_HasBeenProcessed == true)
+			if(requestProcessed == true)
 			{
 				return;
 			}
 			
-			System.out.println("All # Results are Valid (comparision Underway)");
+			System.out.println("Validating all responses are consistent...");
 			
-			String l_leaderData_end_parser = m_LeaderResultProcessed + "/" + "$";
-			String l_segments_Leader[] = l_leaderData_end_parser.split(UDP_PARSER);
-			String l_segments_A[] = m_Replica_A_Processed.split(UDP_PARSER);
-			String l_segments_B[] = m_Replica_B_Processed.split(UDP_PARSER);
+			String leaderResponseWithSep = leaderResponse + "/" + "$";
+			String leaderResponseParts[] = leaderResponseWithSep.split(MSG_SEP);
+			String replicaOneResponseParts[] = replicaOneResponse.split(MSG_SEP);
+			String replicaTwoResponseParts[] = replicaTwoResponse.split(MSG_SEP);
 					
-			for(int i=0;i<l_segments_Leader.length;i++) {
-				l_segments_Leader[i] = l_segments_Leader[i].trim(); 
+			for(int i=0;i<leaderResponseParts.length;i++) {
+				leaderResponseParts[i] = leaderResponseParts[i].trim(); 
 			}
 			
-			for(int i=0;i<l_segments_A.length;i++) {
-				l_segments_A[i] = l_segments_A[i].trim(); 
+			for(int i=0;i<replicaOneResponseParts.length;i++) {
+				replicaOneResponseParts[i] = replicaOneResponseParts[i].trim(); 
 			}
 			
-			for(int i=0;i<l_segments_B.length;i++) {
-				l_segments_B[i] = l_segments_B[i].trim(); 
+			for(int i=0;i<replicaTwoResponseParts.length;i++) {
+				replicaTwoResponseParts[i] = replicaTwoResponseParts[i].trim(); 
 			}
 			
 			// check if all results are same
-			if(l_segments_Leader[0].equals(l_segments_A[0]) || l_segments_Leader[0].equals(l_segments_B[0]))
+			if(leaderResponseParts[0].equals(replicaOneResponseParts[0]) || leaderResponseParts[0].equals(replicaTwoResponseParts[0]))
 			{
-				String l_rmdatagram = "";
-				if(!l_segments_Leader[0].equals(l_segments_A[0]))
+				String inconsistenReplicaIdentifier = "";
+				if(!leaderResponseParts[0].equals(replicaOneResponseParts[0]))
 				{
-					l_rmdatagram = "RA";
+					inconsistenReplicaIdentifier = "RA";
 				}
 			
-				else if(!l_segments_Leader[0].equals(l_segments_B[0]))
+				else if(!leaderResponseParts[0].equals(replicaTwoResponseParts[0]))
 				{
-					l_rmdatagram = "RB";
+					inconsistenReplicaIdentifier = "RB";
 				}
 				
 				// Create a data packet for FE
-				String l_Data_FE = LR_NAME;
+				String requestDataFrontEnd = NAME_REPLICA_LEAD;
 				String result = "";
 				
 				// sending packet to Leader
-				for(int i = 0; i < l_segments_Leader.length; i++)
+				for(int i = 0; i < leaderResponseParts.length; i++)
 				{
-					result  = result + UDP_PARSER + l_segments_Leader[i];
+					result  = result + MSG_SEP + leaderResponseParts[i];
 				}
 							
-				l_Data_FE = l_Data_FE + result;
+				requestDataFrontEnd = requestDataFrontEnd + result;
 				
 				
 				// Sending datagram to Front End the result of Leader
-				System.out.println("LocalReplicsRequestProcessing.CompareResults: to Front End - l_Data: " + l_Data_FE);
-				MainUDPThread.sendPacket(l_Data_FE, UDP_PORT_FE);
+				System.out.println("Sending datagram to the Front End... - " + requestDataFrontEnd);
+				MainUDPThread.sendPacket(requestDataFrontEnd, FRONT_END_PORT);
 								
 				// sending packet to Replica Manager
 				// If Replica Manager Datagram is not empty, send it.
-				if(!l_rmdatagram.equals(""))
+				if(!inconsistenReplicaIdentifier.equals(""))
 				{
-					l_rmdatagram =  LR_NAME + UDP_PARSER + l_rmdatagram;
-					System.out.println("Data gram sent to replica manager l_rmdatagram - " + l_rmdatagram);
-					MainUDPThread.sendPacket(l_rmdatagram, UDP_PORT_REPLICA_MANAGER);
+					inconsistenReplicaIdentifier =  NAME_REPLICA_LEAD + MSG_SEP + inconsistenReplicaIdentifier;
+					System.out.println("Sending Datagram to Replica Manager... - " + inconsistenReplicaIdentifier);
+					MainUDPThread.sendPacket(inconsistenReplicaIdentifier, REPLICA_MANAGER_PORT);
 				}
 			
 			}
 			
-			m_Replica_A_Processed = null;
-			m_Replica_B_Processed = null;
-			m_LeaderResultProcessed = null;
+			replicaOneResponse = null;
+			replicaTwoResponse = null;
+			leaderResponse = null;
 		}
-		// If LR RA and RB have not yet returned a value
 		else
 		{			
-			m_checkedByPrevReplica += 1;
-			System.out.println("Result tried to be Processed By a Replica - " + m_checkedByPrevReplica);
+			replicaResponsePendingCounter += 1;			
 		}
-		
-		// Increment the check
-		// if check reaches 2, send data to FE
-		if(m_checkedByPrevReplica == 2)
+		if(replicaResponsePendingCounter == 2)
 		{
-			//m_LeaderResultProcessed = LR_NAME + UDP_PARSER + m_LeaderResultProcessed;
-			String FEDAta = LR_NAME + UDP_PARSER + m_LeaderResultProcessed;
-			System.out.println("LocalReplicsRequestProcessing.CompareResults: to Front End - FEDAta: " + FEDAta);
-			MainUDPThread.sendPacket(FEDAta, UDP_PORT_FE);
+			String frontEndRequest = NAME_REPLICA_LEAD + MSG_SEP + leaderResponse;
+			System.out.println("Sending datagram to Front End... - " + frontEndRequest);
+			MainUDPThread.sendPacket(frontEndRequest, FRONT_END_PORT);
 		}
 	}
 }

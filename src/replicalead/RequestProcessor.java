@@ -25,17 +25,18 @@ public class RequestProcessor {
 		  RESTART_REPLICA
 	}
 	
-	private static final String UDP_PARSER = "/";
+	private static final String MSG_SEP = "/";
+	private static final String nullGameServerError = "ERR: GameServer does not exist!";
+	private static final String insufficientParametersError = "ERR: Wrong number of parameters in this list!";
 
-	// extract ip address, get required Local Server <location> reference
-		private GameServer  getServerReference(String p_IPAddress)
+		private GameServer getServantORB(String ipAddress)
 		{
 			GameServer aGameServerRef = null;
 			String args[] = null;
 			
 			try
 			{
-				if("132".equals(p_IPAddress.substring(0,3)))
+				if("132".equals(ipAddress.substring(0,3)))
 				{
 					ORB orb = ORB.init(args, null);
 					
@@ -47,7 +48,7 @@ public class RequestProcessor {
 					aGameServerRef = GameServerHelper.narrow(o);			
 				}
 			
-				else if("93".equals(p_IPAddress.substring(0,2)))
+				else if("93".equals(ipAddress.substring(0,2)))
 				{
 					ORB orb = ORB.init(args, null);
 					
@@ -59,7 +60,7 @@ public class RequestProcessor {
 					aGameServerRef = GameServerHelper.narrow(o);	
 				}
 			
-				else if("182".equals(p_IPAddress.substring(0,3)))
+				else if("182".equals(ipAddress.substring(0,3)))
 				{
 					ORB orb = ORB.init(args, null);
 					
@@ -73,7 +74,7 @@ public class RequestProcessor {
 			
 				else
 				{
-					System.out.println("LocalOrbProcessing.getServerReference : Error - IP Location Index not Valid/n");
+					System.out.println("ERR: GameServer does not exist for that location");
 					aGameServerRef =  null;
 				}
 			}
@@ -85,239 +86,227 @@ public class RequestProcessor {
 			return aGameServerRef;
 		}
 		
-		protected String performRMI(String p_input) throws InvalidName, ServantAlreadyActive, WrongPolicy, ObjectNotActive, FileNotFoundException, AdapterInactive
+		protected String performORBAction(String requestAction) throws InvalidName, ServantAlreadyActive, WrongPolicy, ObjectNotActive, FileNotFoundException, AdapterInactive
 		{
-			String l_ParamArray[] = p_input.split("/");
+			String requestParameterList[] = requestAction.split("/");
 			
-			for(int i=0; i<l_ParamArray.length; i++) {
-				l_ParamArray[i] = l_ParamArray[i].trim();
+			for(int i=0; i<requestParameterList.length; i++) {
+				requestParameterList[i] = requestParameterList[i].trim();
 			}
 			
-			if(l_ParamArray != null)
+			if(requestParameterList != null)
 			{
 				
-				int l_numElements = l_ParamArray.length;
+				int parameterListLength = requestParameterList.length;
 				
-				ACTION_TO_PERFORM l_functionValue = ACTION_TO_PERFORM.valueOf(l_ParamArray[0]);
+				ACTION_TO_PERFORM actionToPerform = ACTION_TO_PERFORM.valueOf(requestParameterList[0]);
 				
 				// Send CREATE PLAYER ACCOUNT
-				if(l_functionValue == ACTION_TO_PERFORM.PLAYER_CREATE_ACCOUNT) 
+				if(actionToPerform == ACTION_TO_PERFORM.PLAYER_CREATE_ACCOUNT) 
 				{
-					System.out.println("LocalOrbProcessing.performRMI : Creating Player Account Request/n");
-					if(l_numElements == 7)
+					if(parameterListLength == 7)
 					{
 						
-						GameServer l_LocalGameServerReference =  getServerReference(l_ParamArray[5]);
+						GameServer gameServerOrb =  getServantORB(requestParameterList[5]);
 						
-						if(l_LocalGameServerReference == null)
+						if(gameServerOrb == null)
 						{
-							System.out.println("LocalOrbProcessing.performRMI : Error - Cannot perform RMI, GameServer = NULL/n");
+							System.out.println(nullGameServerError);
 							return "0";
 						}
 						
-						return l_LocalGameServerReference.createPlayerAccount(l_ParamArray[1], l_ParamArray[2], l_ParamArray[3], l_ParamArray[4], l_ParamArray[5], Integer.parseInt(l_ParamArray[6].trim()));
+						return gameServerOrb.createPlayerAccount(requestParameterList[1], requestParameterList[2], requestParameterList[3], requestParameterList[4], requestParameterList[5], Integer.parseInt(requestParameterList[6].trim()));
 					}
 					else
 					{
-						System.out.println("LocalOrbProcessing.performRMI : Error: Have not parsed enough params for create player account/n");
+						System.out.println(insufficientParametersError);
 						return "0";
 					}
 				}
 				
 				// Send PLAYER SIGN IN
 				// playerSignIn(String UserName, String Password, String IPAddres);
-				else if(l_functionValue == ACTION_TO_PERFORM.PLAYER_SIGN_IN) 
+				else if(actionToPerform == ACTION_TO_PERFORM.PLAYER_SIGN_IN) 
 				{
-					System.out.println("LocalOrbProcessing.performRMI : Player Sign In Request/n");
-					if(l_numElements == 4)
+					if(parameterListLength == 4)
 					{
 
-						GameServer l_LocalGameServerReference =  getServerReference(l_ParamArray[3]);
+						GameServer gameServerOrb =  getServantORB(requestParameterList[3]);
 						
-						if(l_LocalGameServerReference == null)
+						if(gameServerOrb == null)
 						{
-							System.out.println("LocalOrbProcessing.performRMI : Error - Cannot perform RMI, GameServer = NULL/n");
+							System.out.println(nullGameServerError);
 							return "0";
 						}
 						
-						return l_LocalGameServerReference.playerSignIn(l_ParamArray[1], l_ParamArray[2], l_ParamArray[3]);
+						return gameServerOrb.playerSignIn(requestParameterList[1], requestParameterList[2], requestParameterList[3]);
 					}
 					else
 					{
-						System.out.println("LocalOrbProcessing.performRMI : Error: Have not parsed enough params for player sign in/n");
+						System.out.println(insufficientParametersError);
 						return "0";
 					}
 				}
 				
 				// Send PLAYER SIGN OUT
 				// playerSignOut(String p_Username, String IPAddress) 
-				else if(l_functionValue == ACTION_TO_PERFORM.PLAYER_SIGN_OUT) 
+				else if(actionToPerform == ACTION_TO_PERFORM.PLAYER_SIGN_OUT) 
 				{
-					System.out.println("LocalOrbProcessing.performRMI : Player Sign Out Request/n");
-					if(l_numElements == 3)
+					if(parameterListLength == 3)
 					{
 
-						GameServer l_LocalGameServerReference =  getServerReference(l_ParamArray[2]);
+						GameServer gameServerOrb =  getServantORB(requestParameterList[2]);
 						
-						if(l_LocalGameServerReference == null)
+						if(gameServerOrb == null)
 						{
-							System.out.println("LocalOrbProcessing.performRMI : Error - Cannot perform RMI, GameServer = NULL/n");
+							System.out.println(nullGameServerError);
 							return "0";
 						}
 						
-						return l_LocalGameServerReference.playerSignOut(l_ParamArray[1], l_ParamArray[2]);
+						return gameServerOrb.playerSignOut(requestParameterList[1], requestParameterList[2]);
 					}
 					else
 					{
-						System.out.println("LocalOrbProcessing.performRMI : Error: Have not parsed enough params for player sign out/n");
+						System.out.println(insufficientParametersError);
 						return "0";
 					}
 				}
 				
-				else if(l_functionValue == ACTION_TO_PERFORM.ADMIN_SIGN_IN) 
+				else if(actionToPerform == ACTION_TO_PERFORM.ADMIN_SIGN_IN) 
 				{
-					System.out.println("LocalOrbProcessing.performRMI : Admin Sign In Request/n");
-					if(l_numElements == 4)
+					if(parameterListLength == 4)
 					{
 
-						GameServer l_LocalGameServerReference =  getServerReference(l_ParamArray[3]);
+						GameServer gameServerOrb =  getServantORB(requestParameterList[3]);
 						
-						if(l_LocalGameServerReference == null)
+						if(gameServerOrb == null)
 						{
-							System.out.println("LocalOrbProcessing.performRMI : Error - Cannot perform RMI, GameServer = NULL/n");
+							System.out.println(nullGameServerError);
 							return "0";
 						}
-						return l_LocalGameServerReference.adminSignIn(l_ParamArray[1], l_ParamArray[2], l_ParamArray[3]);
+						return gameServerOrb.adminSignIn(requestParameterList[1], requestParameterList[2], requestParameterList[3]);
 					}
 					else
 					{
-						System.out.println("LocalOrbProcessing.performRMI : Error: Have not parsed enough params for admin sign in/n");
+						System.out.println(insufficientParametersError);
 						return "0";
 					}
 				}
 				
 				// Send ADMIN SIGN OUT
 				// adminSignOut(String p_Username, String IPAddress) 
-				else if(l_functionValue == ACTION_TO_PERFORM.ADMIN_SIGN_OUT) 
+				else if(actionToPerform == ACTION_TO_PERFORM.ADMIN_SIGN_OUT) 
 				{
-					System.out.println("LocalOrbProcessing.performRMI : Admin Sign Out Request/n");
-					if(l_numElements == 3)
+					if(parameterListLength == 3)
 					{
 
-						GameServer l_LocalGameServerReference =  getServerReference(l_ParamArray[2]);
+						GameServer gameServerOrb =  getServantORB(requestParameterList[2]);
 						
-						if(l_LocalGameServerReference == null)
+						if(gameServerOrb == null)
 						{
-							System.out.println("LocalOrbProcessing.performRMI : Error - Cannot perform RMI, GameServer = NULL/n");
+							System.out.println(nullGameServerError);
 							return "0";
 						}
 						
-						return l_LocalGameServerReference.adminSignOut(l_ParamArray[1], l_ParamArray[2]);
+						return gameServerOrb.adminSignOut(requestParameterList[1], requestParameterList[2]);
 
 					}
 					else
 					{
-						System.out.println("LocalOrbProcessing.performRMI : Error: Have not parsed enough params for admin sign out/n");
+						System.out.println(insufficientParametersError);
 						return "0";
 					}
 				}
 				
 				// Send PLAYER TRANSFER ACCOUNT
 				//String transferAccount(String p_Username, String p_Password, String p_oldIPAddress, String p_newIPAddress)
-				else if(l_functionValue == ACTION_TO_PERFORM.PLAYER_TRANSFER_ACCOUNT) 
+				else if(actionToPerform == ACTION_TO_PERFORM.PLAYER_TRANSFER_ACCOUNT) 
 				{
-					System.out.println("LocalOrbProcessing.performRMI : Player Account Transfer Request/n");
-					if(l_numElements == 5)
+					if(parameterListLength == 5)
 					{
 
-						GameServer l_LocalGameServerReference =  getServerReference(l_ParamArray[3]);
+						GameServer gameServerOrb =  getServantORB(requestParameterList[3]);
 						
-						if(l_LocalGameServerReference == null)
+						if(gameServerOrb == null)
 						{
-							System.out.println("LocalOrbProcessing.performRMI : Error - Cannot perform RMI, GameServer = NULL/n");
+							System.out.println(nullGameServerError);
 							return "0";
 						}
 						
-						return l_LocalGameServerReference.transferAccount(l_ParamArray[1], l_ParamArray[2], l_ParamArray[3], l_ParamArray[4]);
+						return gameServerOrb.transferAccount(requestParameterList[1], requestParameterList[2], requestParameterList[3], requestParameterList[4]);
 					}
 					else
 					{
-						System.out.println("LocalOrbProcessing.performRMI : Error: Have not parsed enough params for player account transfer/n");
+						System.out.println(insufficientParametersError);
 						return "0";
 					}
 				}
 				
 				// Send GET PLAYER STATUS
 				// getPlayerStatus(String AdminUserName, String AdminPassword, String AdminIPAddress);
-				else if(l_functionValue ==  ACTION_TO_PERFORM.ADMIN_GET_PLAYER_STATUS) 
+				else if(actionToPerform ==  ACTION_TO_PERFORM.ADMIN_GET_PLAYER_STATUS) 
 				{
-					System.out.println("LocalOrbProcessing.performRMI : Get Player Status Request/n");
-					if(l_numElements == 4)
+					if(parameterListLength == 4)
 					{
 
-						GameServer l_LocalGameServerReference =  getServerReference(l_ParamArray[3]);
+						GameServer gameServerOrb =  getServantORB(requestParameterList[3]);
 						
-						if(l_LocalGameServerReference == null)
+						if(gameServerOrb == null)
 						{
-							System.out.println("LocalOrbProcessing.performRMI : Error - Cannot perform RMI, GameServer = NULL/n");
+							System.out.println(nullGameServerError);
 							return "0";
 						}
 						
-						return l_LocalGameServerReference.getPlayerStatus(l_ParamArray[1], l_ParamArray[2], l_ParamArray[3]);
+						return gameServerOrb.getPlayerStatus(requestParameterList[1], requestParameterList[2], requestParameterList[3]);
 					}
 					else
 					{
-						System.out.println("LocalOrbProcessing.performRMI : Error: Have not parsed enough params for get player status/n");
+						System.out.println(insufficientParametersError);
 						return "0";
 					}
 				}
 				
 				// Send SUSPEND ACCOUNT
 				// suspendAccount(String p_AdminUserName, String p_AdminPassword, String p_AdminIPAddress, String p_UsernametoSuspend) 
-				else if(l_functionValue == ACTION_TO_PERFORM.ADMIN_SUSPEND_PLAYER_ACCOUNT) 
+				else if(actionToPerform == ACTION_TO_PERFORM.ADMIN_SUSPEND_PLAYER_ACCOUNT) 
 				{
-					System.out.println("LocalOrbProcessing.performRMI : Get Suspend Account Request/n");
-					if(l_numElements == 5)
+					if(parameterListLength == 5)
 					{
 
-						GameServer l_LocalGameServerReference =  getServerReference(l_ParamArray[3]);
+						GameServer gameServerOrb =  getServantORB(requestParameterList[3]);
 						
-						if(l_LocalGameServerReference == null)
+						if(gameServerOrb == null)
 						{
-							System.out.println("LocalOrbProcessing.performRMI : Error - Cannot perform RMI, GameServer = NULL/n");
+							System.out.println(nullGameServerError);
 							return "0";
 						}
 						
-						return l_LocalGameServerReference.suspendAccount(l_ParamArray[1], l_ParamArray[2], l_ParamArray[3], l_ParamArray[4]);
+						return gameServerOrb.suspendAccount(requestParameterList[1], requestParameterList[2], requestParameterList[3], requestParameterList[4]);
 					}
 					else
 					{
-						System.out.println("LocalOrbProcessing.performRMI : Error: Have not parsed enough params for suspend account/n");
+						System.out.println(insufficientParametersError);
 						return "0";
 					}
 				} 
 			}
-			System.out.println("LocalOrbProcessing.performRMI : Error: Parsing for method selection not done right");
-			return "0";
-			
+			System.out.println("ERR: Unknown action requested");
+			return "0";		
 		}
 		
-		protected void ProcessRMRequests(String p_input)
+		protected void ProcessRMRequests(String requestFromReplicaManager)
 		{
-			String l_ParamArray[] = p_input.split(UDP_PARSER);
-				
-			System.out.println("LocalRMRequestProcessing.getMethodName: l_ParamArray[0].substring(0, 15) - " + l_ParamArray[0].substring(0, 15));
+			String parameterList[] = requestFromReplicaManager.split(MSG_SEP);
 			
-			if(l_ParamArray[0].substring(0, 15).equals("RESTART_REPLICA"))
+			if(parameterList[0].substring(0, 15).equals("RESTART_REPLICA"))
 			{
-				System.out.println("Starting Replica LEAD");
-				// Creating Instances of Local Servers - North America, Europe and Asia
-				GameServerNA l_GameServer_NorthAmerica = new GameServerNA();
-				GameServerEU l_GameServer_Europe = new GameServerEU();
-				GameServerAS l_GameServer_Asia = new GameServerAS();
-				l_GameServer_NorthAmerica.start();
-				l_GameServer_Europe.start();
-				l_GameServer_Asia.start();
+				System.out.println("Starting Replica LEAD...");
+				GameServerNA naGameServer = new GameServerNA();
+				GameServerEU euGameServer = new GameServerEU();
+				GameServerAS asGameServer = new GameServerAS();
+				naGameServer.start();
+				euGameServer.start();
+				asGameServer.start();
 			}
 		}
 }

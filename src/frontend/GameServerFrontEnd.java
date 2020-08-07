@@ -21,8 +21,8 @@ import org.omg.PortableServer.POAHelper;
 public class GameServerFrontEnd extends GameServerPOA implements Runnable {
 	private static Queue <List<Object>> fifoQueue;
 	
-	private final int UDP_PORT_FRONTEND = 6000;
-	private final int UDP_PORT_LEAD = 4000;
+	private final int FRONT_END_PORT = 6000;
+	private final int REPLICA_LEAD_PORT = 4000;
 	
 	private static enum ACTION_TO_PERFORM {
 		  PLAYER_CREATE_ACCOUNT,
@@ -54,7 +54,7 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
 		}
 		orbThread = new GameServerORBThread(createORB(args));
 		orbThread.start();
-		udpThread = new GameServerFEThread(UDP_PORT_FRONTEND);
+		udpThread = new GameServerFEThread(FRONT_END_PORT);
 		udpThread.start();
 	}
 	
@@ -82,7 +82,7 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
 			
 			if(udpThread.hasCrashed())
 			{
-				udpThread = new GameServerFEThread(UDP_PORT_FRONTEND);
+				udpThread = new GameServerFEThread(FRONT_END_PORT);
 				udpThread.start();
 			}
 			
@@ -148,7 +148,7 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
                     .collect(Collectors.joining("/")); 
 			
 			message = data.getBytes();
-			requestToReplicaLeader = new DatagramPacket(message, data.length(), host, UDP_PORT_LEAD);
+			requestToReplicaLeader = new DatagramPacket(message, data.length(), host, REPLICA_LEAD_PORT);
 			sendSocket.send(requestToReplicaLeader);
 		} catch (SocketException e) {
 			// LOG

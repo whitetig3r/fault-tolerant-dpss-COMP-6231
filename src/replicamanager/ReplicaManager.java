@@ -10,21 +10,21 @@ public class ReplicaManager
 
 	private static DatagramSocket aSocket = null;
 	private static boolean waitForConnection = true;
-	static int IPaddress = 0;
-	static int serverPort;
+	static int ipAddress = 0;
+	static int portServer;
 	static String dataRecieved = null;
 	static String [] messageArray;
 	static int parserPosition = 0;
 	
-	private static final int UDP_PORT_REPLICA_ONE = 2000;
-	private static final int UDP_PORT_REPLICA_TWO = 3000;
-	private static final int UDP_PORT_REPLICA_LEAD = 4000;
-	private static final int UDP_PORT_REPLICA_MANAGER = 5000;
+	private static final int REPLICA_ONE_PORT = 2000;
+	private static final int REPLICA_TWO_PORT = 3000;
+	private static final int REPLICA_LEAD_PORT = 4000;
+	private static final int REPLICA_MANAGER_PORT = 5000;
 	private static int UDP_BUFFER_SIZE = 1200;
-	private final static String RM_NAME = "RM"; 
-	private final static String RA_NAME = "RA";
-	private final static String RB_NAME = "RB";
-	private final static String LR_NAME = "LR";
+	private final static String REPLICA_MANAGER_IDENTIFIER = "RM"; 
+	private final static String REPLICA_ONE_IDENTIFIER = "RA";
+	private final static String REPLICA_TWO_IDENTIFIER = "RB";
+	private final static String REPLICA_LEAD_IDENTIFIER = "LR";
 	
 	private static enum ACTION_TO_PERFORM {
 		  PLAYER_CREATE_ACCOUNT,
@@ -41,13 +41,12 @@ public class ReplicaManager
 	// private constructor
 	private ReplicaManager()
 	{
-		//Initialize the system by sending 3 UDP messages to 3 server groups
-		startServerGroup(UDP_PORT_REPLICA_LEAD);
-		startServerGroup(UDP_PORT_REPLICA_ONE);
-		startServerGroup(UDP_PORT_REPLICA_TWO);
+		startReplicaGroup(REPLICA_LEAD_PORT);
+		startReplicaGroup(REPLICA_ONE_PORT);
+		startReplicaGroup(REPLICA_TWO_PORT);
 
-		System.out.println ("Replica Manager sent request to run all servers!");
-		startServerListener(UDP_PORT_REPLICA_MANAGER);
+		System.out.println ("Replica Manager has requested RESTART of all server groups...");
+		startReplicaManagerListener(REPLICA_MANAGER_PORT);
 	}
 
 	public static void main (String [] args) 
@@ -55,64 +54,55 @@ public class ReplicaManager
 		new ReplicaManager();
 	}
 
-	protected static void startServerListener (int portNumber) {
+	protected static void startReplicaManagerListener (int portNumber) {
 		String requestServerInitials = null;
 
 		try {
 
-			aSocket = new DatagramSocket(UDP_PORT_REPLICA_MANAGER);
+			aSocket = new DatagramSocket(REPLICA_MANAGER_PORT);
 			byte [] buffer = new byte [UDP_BUFFER_SIZE];
-
-			//always listen for new messages on the specified port
+			
 			while (waitForConnection) {							
 
 				DatagramPacket request = new DatagramPacket(buffer, buffer.length);
 				aSocket.receive(request);
-
-				//get the data from the request and check
 				dataRecieved = new String(request.getData());
-				//dataRecieved.toUpperCase();
 				messageArray = dataRecieved.split("/");
-
-				//parserPosition = dataRecieved.indexOf(Parameters.UDP_PARSER);
-				System.out.println(dataRecieved);
-
-				if(messageArray[0].equals(LR_NAME))
+				if(messageArray[0].equals(REPLICA_LEAD_IDENTIFIER))
 				{
-					//check the message from the Replica A
-					if (messageArray[1].contains(RA_NAME)) 
+					if (messageArray[1].contains(REPLICA_ONE_IDENTIFIER)) 
 					{
 						replicaOnecounter ++;
 						if(replicaOnecounter >= 3) 
 						{
 							replicaOnecounter = 0;
-							stopServer(UDP_PORT_REPLICA_ONE);
+							stopReplicaGroup(REPLICA_ONE_PORT);
 						}
-					} //check the message from the Replica B
-					else if (messageArray[1].contains(RB_NAME)) 
+					}
+					else if (messageArray[1].contains(REPLICA_TWO_IDENTIFIER)) 
 					{
 						replicaTwoCounter ++;
 						if(replicaTwoCounter >= 3) 
 						{
 							replicaTwoCounter = 0;
-							stopServer(UDP_PORT_REPLICA_TWO);
+							stopReplicaGroup(REPLICA_TWO_PORT);
 						}
 					}
 				}
 			}
 		}
 			catch (Exception e) {e.printStackTrace();} 
-		}
+	}
 
-	protected static void startServerGroup(int portNumber){
+	protected static void startReplicaGroup(int portNumber){
 		int UDPcommunicationPort = portNumber;
 		DatagramSocket aSocket = null;
-		String RMInitMessage = RM_NAME + "/" + ACTION_TO_PERFORM.RESTART_REPLICA.name();
+		String requestReplicaManagerMessage = REPLICA_MANAGER_IDENTIFIER + "/" + ACTION_TO_PERFORM.RESTART_REPLICA.name();
 		boolean ackRecieved = true;
 
 		try {
 			aSocket = new DatagramSocket();
-			byte [] m = RMInitMessage.getBytes();
+			byte [] m = requestReplicaManagerMessage.getBytes();
 			InetAddress aHost = InetAddress.getByName("localhost");
 			DatagramPacket request = new DatagramPacket(m,m.length, aHost, UDPcommunicationPort);
 			aSocket.send(request);
@@ -136,17 +126,17 @@ public class ReplicaManager
 
 
 
-	protected static boolean stopServer (int portNumber) {
+	protected static boolean stopReplicaGroup (int portNumber) {
 		int stopServerPort = portNumber;
 		DatagramSocket aSocket = null;
-		String RMInitMessage = RM_NAME + "/" + ACTION_TO_PERFORM.RESTART_REPLICA.name();
+		String requestReplicaManagerMessage = REPLICA_MANAGER_IDENTIFIER + "/" + ACTION_TO_PERFORM.RESTART_REPLICA.name();
 		boolean ackRecieved = true;
 
 		try {
 			aSocket = new DatagramSocket();
-			byte [] m = RMInitMessage.getBytes();
+			byte [] m = requestReplicaManagerMessage.getBytes();
 			InetAddress aHost = InetAddress.getByName("localhost");
-			DatagramPacket request = new DatagramPacket(m,RMInitMessage.length(), aHost, stopServerPort);
+			DatagramPacket request = new DatagramPacket(m,requestReplicaManagerMessage.length(), aHost, stopServerPort);
 			aSocket.send(request);
 
 		}
