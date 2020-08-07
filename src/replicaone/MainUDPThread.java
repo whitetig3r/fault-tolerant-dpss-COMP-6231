@@ -36,12 +36,15 @@ class ReplicaManagerListenUDPThread extends Thread
 	private boolean bShouldRestart;
 	private DatagramSocket aDatagramSocket;
 	private DatagramPacket requestFromReplicaManager;
+	private GameServer aInterfaceIDL;
 	private byte [] buffer;
 	private String [] messageArray;
 	
 	private final String UDP_PARSER = "/";
 	private int UDP_BUFFER_SIZE = 1200;
+	protected static String BRE_NAME = "BRE";
 	private static final String RM_NAME = "RM";
+	protected static int REPLICA_BREAKER_PORT = 9393;
 
 	private enum ACTION_TO_PERFORM {
 		  PLAYER_CREATE_ACCOUNT,
@@ -101,6 +104,16 @@ class ReplicaManagerListenUDPThread extends Thread
 				{
 					bShouldRestart = true;
 				}
+			} else if(messageArray[0].equals(BRE_NAME)) {
+				setORBreference("132.168.2.22");
+				boolean na = aInterfaceIDL.initiateCorruption();
+				setORBreference("93.168.2.22");
+				boolean eu = aInterfaceIDL.initiateCorruption();
+				setORBreference("182.168.2.22");
+				boolean as = aInterfaceIDL.initiateCorruption();
+				if(na && eu && as && sendCorruptionSuccessPacket("success"))
+					System.out.println("Sent confirmation to breaker server");
+					
 			}
 		}
 		catch (IOException e)
@@ -108,6 +121,70 @@ class ReplicaManagerListenUDPThread extends Thread
 			aDatagramSocket.close();
 			bCrashed = true;
 		}
+	}
+	
+	
+	private boolean setORBreference(String pIPAddress) throws IOException
+	{
+		ORB orb = ORB.init(new String [1], null);
+		BufferedReader bufferedReader;
+		// Get the reference to the CORBA objects from the file
+		if(pIPAddress.length() >= 3 && pIPAddress.substring(0,3).equals("132"))
+		{
+			bufferedReader = new BufferedReader(new FileReader("NA_IOR.txt"));
+		}
+		else if(pIPAddress.length() >= 2 && pIPAddress.substring(0,2).equals("93"))
+		{
+			bufferedReader = new BufferedReader(new FileReader("EU_IOR.txt"));
+		}
+		else if(pIPAddress.length() >= 3 && pIPAddress.substring(0,3).equals("182"))
+		{
+			bufferedReader = new BufferedReader(new FileReader("AS_IOR.txt"));
+		}
+		else
+		{
+			System.out.println("Invalid GeoLocation");
+			return false;
+		}
+		String stringORB = bufferedReader.readLine();
+		bufferedReader.close();
+		// Transform the reference string to CORBA object
+		org.omg.CORBA.Object reference_CORBA = orb.string_to_object(stringORB);
+		aInterfaceIDL = GameServerHelper.narrow(reference_CORBA);
+		
+		orb = null;
+		stringORB = null;
+		bufferedReader = null;
+		
+		return true;
+	}
+
+	private boolean sendCorruptionSuccessPacket(String p_Data) {
+			DatagramSocket aSocket = null;
+			try 
+			{
+				aSocket = new DatagramSocket();    
+				byte [] m = p_Data.getBytes();
+				InetAddress aHost = InetAddress.getByName("localhost");
+				int serverPort = REPLICA_BREAKER_PORT;		                                                 
+				DatagramPacket request = new DatagramPacket(m,  p_Data.length(), aHost, serverPort);
+				aSocket.send(request);		
+				return true;
+			}
+			catch (SocketException e)
+			{
+				System.out.println("Socket: " + e.getMessage());
+			}
+			catch (IOException e)
+			{
+				System.out.println("IO: " + e.getMessage());
+			}
+			finally 
+			{
+				if(aSocket != null) aSocket.close();
+			}
+			
+			return false;
 	}
 }
 

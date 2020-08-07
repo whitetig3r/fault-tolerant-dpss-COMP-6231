@@ -52,6 +52,7 @@ public class GameServerServant extends GameServerPOA implements Runnable {
 	private int INT_UDP_PORT;
 	private final int SERVER_TIMEOUT_IN_MILLIS = 5000;
 	private boolean hasCrashed = false;
+	private boolean initiateInvalidResults = false;
 	private DatagramSocket aSocket = null;
 	private ORBThread orbThread;
 	final String[] defaultORBArgs = { "-ORBInitialPort", "1050" };
@@ -104,9 +105,15 @@ public class GameServerServant extends GameServerPOA implements Runnable {
 		createPlayerAccount("Bill","Johns","billy20","password", getRegionDefaultIP(), 48);
 		createPlayerAccount("Crystal","Reigo","petula71","password", getRegionDefaultIP(), 35);
 	}
+	
+	private String invalidResult() {
+		return "Bad Result!";
+	}
 
 	@Override
 	public String createPlayerAccount(String fName, String lName, String uName, String password, String ipAddress, int age) {
+		if(initiateInvalidResults) return invalidResult();
+		
 		serverLog("Initiating CREATEACCOUNT for player", ipAddress);
 		
 		Character uNameFirstChar = uName.charAt(0);
@@ -143,6 +150,8 @@ public class GameServerServant extends GameServerPOA implements Runnable {
 	
 	@Override
 	public String playerSignIn(String uName, String password, String ipAddress) {
+		if(initiateInvalidResults) return invalidResult();
+		
 		Player playerToSignIn = null;
 		serverLog("Initiating SIGNIN for player", ipAddress);
 		Character uNameFirstChar = uName.charAt(0);
@@ -185,6 +194,8 @@ public class GameServerServant extends GameServerPOA implements Runnable {
 	
 	@Override
 	public String playerSignOut(String uName, String ipAddress) {
+		if(initiateInvalidResults) return invalidResult();
+		
 		Player playerToSignOut = null;
 		serverLog("Initiating SIGNOUT for player", ipAddress);
 		Character uNameFirstChar = uName.charAt(0);
@@ -227,6 +238,8 @@ public class GameServerServant extends GameServerPOA implements Runnable {
 	
 	@Override
 	public String transferAccount(String uName, String password, String oldIpAddress, String newIpAddress) {
+		if(initiateInvalidResults) return invalidResult();
+		
 		Player playerToTransfer = null;
 		serverLog("Initiating TRANSFER ACCOUNT action for player", oldIpAddress);
 		Character uNameFirstChar = uName.charAt(0);
@@ -296,6 +309,8 @@ public class GameServerServant extends GameServerPOA implements Runnable {
 	
 	@Override
 	public String adminSignIn(String uName, String password, String ipAddress) {
+		if(initiateInvalidResults) return invalidResult();
+		
 		Player adminToSignIn = null;
 		serverLog("Initiating SIGNIN for admin", ipAddress);
 		Character uNameFirstChar = uName.charAt(0);
@@ -336,6 +351,8 @@ public class GameServerServant extends GameServerPOA implements Runnable {
 	
 	@Override
 	public String adminSignOut(String uName, String ipAddress) {
+		if(initiateInvalidResults) return invalidResult();
+		
 		Player adminToSignOut = null;
 		serverLog("Initiating SIGNOUT for admin", ipAddress);
 		Character uNameFirstChar = uName.charAt(0);
@@ -373,6 +390,8 @@ public class GameServerServant extends GameServerPOA implements Runnable {
 	
 	@Override
 	public String getPlayerStatus(String uName, String password, String ipAddress) {
+		if(initiateInvalidResults) return invalidResult();
+		
 		String retStatement = "ERR: Unrecognized Error while requesting player status!";
 		
 		if(!(uName.equals("Admin") && password.equals("Admin"))) {
@@ -397,6 +416,8 @@ public class GameServerServant extends GameServerPOA implements Runnable {
 
 	@Override
 	public String suspendAccount(String uName, String password, String ipAddress, String uNameToSuspend) {
+		if(initiateInvalidResults) return invalidResult();
+		
 		Player playerToSuspend = null;
 		serverLog("Initiating PLAYER ACCOUNT SUSPEND action for admin", ipAddress);
 		Character uNameFirstChar = uNameToSuspend.charAt(0);
@@ -436,6 +457,13 @@ public class GameServerServant extends GameServerPOA implements Runnable {
 		String errExist = "ERR: Admin with that password combination does not exist";
 		serverLog(errExist, ipAddress);
 		return errExist;
+	}
+	
+	@Override
+	public boolean initiateCorruption() {
+		initiateInvalidResults = true;
+		if(initiateInvalidResults) return true;
+		else return false;
 	}
 	
 	// END OF CORE ADMIN FUNCTIONALITY

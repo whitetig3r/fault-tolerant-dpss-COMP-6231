@@ -1,4 +1,4 @@
-package replicatwo;
+package utilities;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -7,32 +7,47 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
+import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class ReplicaTwoBreaker {
+public class ReplicaGroupBreaker {
 	private static final int UDP_BREAKER_PORT = 9393;
 
 	public static void main(String[] args) {
 		runRegionUdpServer();
-		makeInvalidResultsOnReplica();
+		Scanner keyb = new Scanner(System.in);
+		int port = -1;
+		System.out.println("Pick \"1\" to cause a non-malicious byzantine failure in replica group one and \"2\" to do the same for replica group two -- ");
+		while(true) {
+			String inp = keyb.nextLine();
+			if(inp.trim().equals("1")) {
+				port = 2000;
+				break;
+			}
+			else if(inp.trim().equals("2")) {
+				port = 3000;
+				break;
+			}
+			System.out.println("Invalid choice! Enter a valid option:");
+		}
+		makeInvalidResultsOnReplica(port);
 	}
 
-	private static void makeInvalidResultsOnReplica() {
+	private static void makeInvalidResultsOnReplica(int p_Port) {
 		DatagramSocket aSocket = null;
 		String reqOp = "BRE/";
-		int UDP_REPLICA_TWO = 3000;
 		try {
 			aSocket = new DatagramSocket();    
 			aSocket.setSoTimeout(5000); 
 			byte [] m = reqOp.getBytes();
 			InetAddress aHost = InetAddress.getByName("127.0.0.1");		                                                 
 			DatagramPacket request =
-			 	new DatagramPacket(m, reqOp.length(), aHost, UDP_REPLICA_TWO);
+			 	new DatagramPacket(m, reqOp.length(), aHost, p_Port);
 			aSocket.send(request);			                        
-			System.out.println("Successfully initiated replicaTwo server corruption on all three region servers!");
+			System.out.println("Successfully initiated replicaGroup on port " + p_Port  + " corruption sequence on all three region servers!");
 		} catch (SocketTimeoutException e) {
-			String timeOut = String.format("ERR: Request to server on port %d has timed out!", UDP_REPLICA_TWO);
+			String timeOut = String.format("ERR: Request to server on port %d has timed out!", p_Port);
 			System.out.println(timeOut);
 		} catch (SocketException e){
 			System.out.println("ERR: " + e.getMessage());
@@ -66,7 +81,7 @@ public class ReplicaTwoBreaker {
   				String stringRequest = new String(request.getData(), 0, 7, StandardCharsets.UTF_8);
   				// get confirmation of successful break
   				if(stringRequest.equals("success")) {
-  					System.out.println("Exiting as failure on replica two has been initiated");
+  					System.out.println("Exiting as failure on replica group has been initiated");
   					System.exit(0);
   				}
     		}
