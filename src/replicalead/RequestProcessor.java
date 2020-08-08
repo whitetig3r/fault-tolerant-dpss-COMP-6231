@@ -86,35 +86,38 @@ public class RequestProcessor {
 			return aGameServerRef;
 		}
 		
-		protected String performORBAction(String requestAction) throws InvalidName, ServantAlreadyActive, WrongPolicy, ObjectNotActive, FileNotFoundException, AdapterInactive
-		{
+		protected String performORBAction(String requestAction) throws InvalidName, ServantAlreadyActive, WrongPolicy, ObjectNotActive, FileNotFoundException, AdapterInactive {
 			String requestParameterList[] = requestAction.split("/");
 			
+			sanitizeRequestParameterList(requestParameterList);
+			
+			if(requestParameterList != null) {
+				int parameterListLength = requestParameterList.length;
+				ACTION_TO_PERFORM actionToPerform = ACTION_TO_PERFORM.valueOf(requestParameterList[0]);
+				return performRequestedAction(requestParameterList, parameterListLength, actionToPerform);
+			}
+			
+			return "0";
+		}
+
+		private void sanitizeRequestParameterList(String[] requestParameterList) {
 			for(int i=0; i<requestParameterList.length; i++) {
 				requestParameterList[i] = requestParameterList[i].trim();
 			}
-			
-			if(requestParameterList != null)
-			{
-				
-				int parameterListLength = requestParameterList.length;
-				
-				ACTION_TO_PERFORM actionToPerform = ACTION_TO_PERFORM.valueOf(requestParameterList[0]);
-				
-				// Send CREATE PLAYER ACCOUNT
-				if(actionToPerform == ACTION_TO_PERFORM.PLAYER_CREATE_ACCOUNT) 
-				{
+		}
+
+		private String performRequestedAction(String[] requestParameterList, int parameterListLength,
+				ACTION_TO_PERFORM actionToPerform) {
+			switch(actionToPerform) {
+				case PLAYER_CREATE_ACCOUNT: {
 					if(parameterListLength == 7)
 					{
-						
 						GameServer gameServerOrb =  getServantORB(requestParameterList[5]);
-						
 						if(gameServerOrb == null)
 						{
 							System.out.println(nullGameServerError);
 							return "0";
 						}
-						
 						return gameServerOrb.createPlayerAccount(requestParameterList[1], requestParameterList[2], requestParameterList[3], requestParameterList[4], requestParameterList[5], Integer.parseInt(requestParameterList[6].trim()));
 					}
 					else
@@ -124,21 +127,15 @@ public class RequestProcessor {
 					}
 				}
 				
-				// Send PLAYER SIGN IN
-				// playerSignIn(String UserName, String Password, String IPAddres);
-				else if(actionToPerform == ACTION_TO_PERFORM.PLAYER_SIGN_IN) 
-				{
+				case PLAYER_SIGN_IN: {
 					if(parameterListLength == 4)
 					{
-
 						GameServer gameServerOrb =  getServantORB(requestParameterList[3]);
-						
 						if(gameServerOrb == null)
 						{
 							System.out.println(nullGameServerError);
 							return "0";
 						}
-						
 						return gameServerOrb.playerSignIn(requestParameterList[1], requestParameterList[2], requestParameterList[3]);
 					}
 					else
@@ -147,22 +144,17 @@ public class RequestProcessor {
 						return "0";
 					}
 				}
-				
-				// Send PLAYER SIGN OUT
-				// playerSignOut(String p_Username, String IPAddress) 
-				else if(actionToPerform == ACTION_TO_PERFORM.PLAYER_SIGN_OUT) 
-				{
+
+				case PLAYER_SIGN_OUT: {
 					if(parameterListLength == 3)
 					{
 
 						GameServer gameServerOrb =  getServantORB(requestParameterList[2]);
-						
 						if(gameServerOrb == null)
 						{
 							System.out.println(nullGameServerError);
 							return "0";
 						}
-						
 						return gameServerOrb.playerSignOut(requestParameterList[1], requestParameterList[2]);
 					}
 					else
@@ -172,11 +164,9 @@ public class RequestProcessor {
 					}
 				}
 				
-				else if(actionToPerform == ACTION_TO_PERFORM.ADMIN_SIGN_IN) 
-				{
+				case ADMIN_SIGN_IN: {
 					if(parameterListLength == 4)
 					{
-
 						GameServer gameServerOrb =  getServantORB(requestParameterList[3]);
 						
 						if(gameServerOrb == null)
@@ -193,23 +183,16 @@ public class RequestProcessor {
 					}
 				}
 				
-				// Send ADMIN SIGN OUT
-				// adminSignOut(String p_Username, String IPAddress) 
-				else if(actionToPerform == ACTION_TO_PERFORM.ADMIN_SIGN_OUT) 
-				{
+				case ADMIN_SIGN_OUT: {
 					if(parameterListLength == 3)
 					{
-
 						GameServer gameServerOrb =  getServantORB(requestParameterList[2]);
-						
 						if(gameServerOrb == null)
 						{
 							System.out.println(nullGameServerError);
 							return "0";
 						}
-						
 						return gameServerOrb.adminSignOut(requestParameterList[1], requestParameterList[2]);
-
 					}
 					else
 					{
@@ -217,22 +200,17 @@ public class RequestProcessor {
 						return "0";
 					}
 				}
-				
-				// Send PLAYER TRANSFER ACCOUNT
-				//String transferAccount(String p_Username, String p_Password, String p_oldIPAddress, String p_newIPAddress)
-				else if(actionToPerform == ACTION_TO_PERFORM.PLAYER_TRANSFER_ACCOUNT) 
-				{
+
+				case PLAYER_TRANSFER_ACCOUNT: {
 					if(parameterListLength == 5)
 					{
 
 						GameServer gameServerOrb =  getServantORB(requestParameterList[3]);
-						
 						if(gameServerOrb == null)
 						{
 							System.out.println(nullGameServerError);
 							return "0";
 						}
-						
 						return gameServerOrb.transferAccount(requestParameterList[1], requestParameterList[2], requestParameterList[3], requestParameterList[4]);
 					}
 					else
@@ -242,21 +220,15 @@ public class RequestProcessor {
 					}
 				}
 				
-				// Send GET PLAYER STATUS
-				// getPlayerStatus(String AdminUserName, String AdminPassword, String AdminIPAddress);
-				else if(actionToPerform ==  ACTION_TO_PERFORM.ADMIN_GET_PLAYER_STATUS) 
-				{
+				case ADMIN_GET_PLAYER_STATUS: {
 					if(parameterListLength == 4)
 					{
-
 						GameServer gameServerOrb =  getServantORB(requestParameterList[3]);
-						
 						if(gameServerOrb == null)
 						{
 							System.out.println(nullGameServerError);
 							return "0";
 						}
-						
 						return gameServerOrb.getPlayerStatus(requestParameterList[1], requestParameterList[2], requestParameterList[3]);
 					}
 					else
@@ -266,21 +238,16 @@ public class RequestProcessor {
 					}
 				}
 				
-				// Send SUSPEND ACCOUNT
-				// suspendAccount(String p_AdminUserName, String p_AdminPassword, String p_AdminIPAddress, String p_UsernametoSuspend) 
-				else if(actionToPerform == ACTION_TO_PERFORM.ADMIN_SUSPEND_PLAYER_ACCOUNT) 
+				case ADMIN_SUSPEND_PLAYER_ACCOUNT: 
 				{
 					if(parameterListLength == 5)
 					{
-
 						GameServer gameServerOrb =  getServantORB(requestParameterList[3]);
-						
 						if(gameServerOrb == null)
 						{
 							System.out.println(nullGameServerError);
 							return "0";
 						}
-						
 						return gameServerOrb.suspendAccount(requestParameterList[1], requestParameterList[2], requestParameterList[3], requestParameterList[4]);
 					}
 					else
@@ -289,9 +256,12 @@ public class RequestProcessor {
 						return "0";
 					}
 				} 
+				
+				default: {
+					System.out.println("ERR: Unknown action requested");
+					return "0";
+				}
 			}
-			System.out.println("ERR: Unknown action requested");
-			return "0";		
 		}
 		
 		protected void ProcessRMRequests(String requestFromReplicaManager)

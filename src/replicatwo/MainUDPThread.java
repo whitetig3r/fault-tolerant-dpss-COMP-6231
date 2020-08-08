@@ -13,13 +13,15 @@ import java.util.Arrays;
 
 import org.omg.CORBA.ORB;
 
+import exceptions.UnknownServerRegionException;
+
 class ORBThread extends Thread
 {
 	private ORB orb;
 
-	protected ORBThread(ORB pOrb)
+	protected ORBThread(ORB orb)
 	{
-		orb = pOrb;
+		this.orb = orb;
 	}
 
 	@Override
@@ -29,22 +31,22 @@ class ORBThread extends Thread
 	}
 }
 
-class ReplicaManagerBreakerListenUDPThread extends Thread
+class ReplicaManagerListenUDPThread extends Thread
 {
-	protected static int REPLICA_BREAKER_PORT = 9393;
 	private int aPort;
-	private boolean bCrashed;
-	private boolean bShouldRestart;
+	private boolean listenerCrashed;
+	private boolean listenerRestartNeeded;
 	private DatagramSocket aDatagramSocket;
 	private DatagramPacket requestFromReplicaManager;
-	private GameServer aInterfaceIDL;
+	private GameServer gameServerReference;
 	private byte [] buffer;
-	private String [] messageArray;
+	private String [] parameterList;
 	
-	private final String UDP_PARSER = "/";
-	protected static String BRE_NAME = "BRE";
+	private final String MSG_SEP = "/";
 	private int UDP_BUFFER_SIZE = 1200;
-	private static final String RM_NAME = "RM";
+	protected static String BREAKER_IDENTIFIER = "BRE";
+	private static final String REPLICA_MANAGER_IDENTIFIER = "RM";
+	protected static int REPLICA_BREAKER_PORT = 9393;
 
 	private enum ACTION_TO_PERFORM {
 		  PLAYER_CREATE_ACCOUNT,
@@ -58,28 +60,28 @@ class ReplicaManagerBreakerListenUDPThread extends Thread
 		  RESTART_REPLICA
 	}
 	
-	protected ReplicaManagerBreakerListenUDPThread(int pPort) throws SocketException
+	protected ReplicaManagerListenUDPThread(int port) throws SocketException
 	{
-		aPort = pPort;
-		bCrashed = false;
-		bShouldRestart = false;
+		aPort = port;
+		listenerCrashed = false;
+		listenerRestartNeeded = false;
 		aDatagramSocket = new DatagramSocket(aPort);
 		buffer = new byte [UDP_BUFFER_SIZE];
 	}
 	
 	protected boolean hasCrashed()
 	{
-		return bCrashed;
+		return listenerCrashed;
 	}
 	
 	protected boolean shouldRestart()
 	{
-		return bShouldRestart;
+		return listenerRestartNeeded;
 	}
 	
 	protected void resetShouldRestart()
 	{
-		bShouldRestart = false;
+		listenerRestartNeeded = false;
 	}
 	
 	@Override
@@ -89,28 +91,27 @@ class ReplicaManagerBreakerListenUDPThread extends Thread
 			handleCommunication();
 	}
 	
-	/* Handles communication with the replica manager */
 	public void handleCommunication()
 	{
 		try
 		{
 			requestFromReplicaManager = new DatagramPacket(buffer, buffer.length);
 			aDatagramSocket.receive(requestFromReplicaManager);
-			messageArray = (new String(requestFromReplicaManager.getData())).split(UDP_PARSER);
-			if(messageArray[0].equals(RM_NAME))
+			parameterList = (new String(requestFromReplicaManager.getData())).split(MSG_SEP);
+			if(parameterList[0].equals(REPLICA_MANAGER_IDENTIFIER))
 			{
-				messageArray[1] = messageArray[1].trim();
-				if(messageArray[1].equals(ACTION_TO_PERFORM.RESTART_REPLICA.name()))
+				parameterList[1] = parameterList[1].trim();
+				if(parameterList[1].equals(ACTION_TO_PERFORM.RESTART_REPLICA.name()))
 				{
-					bShouldRestart = true;
+					listenerRestartNeeded = true;
 				}
-			} else if(messageArray[0].equals(BRE_NAME)) {
+			} else if(parameterList[0].equals(BREAKER_IDENTIFIER)) {
 				setORBreference("132.168.2.22");
-				boolean na = aInterfaceIDL.initiateCorruption();
+				boolean na = gameServerReference.initiateCorruption();
 				setORBreference("93.168.2.22");
-				boolean eu = aInterfaceIDL.initiateCorruption();
+				boolean eu = gameServerReference.initiateCorruption();
 				setORBreference("182.168.2.22");
-				boolean as = aInterfaceIDL.initiateCorruption();
+				boolean as = gameServerReference.initiateCorruption();
 				if(na && eu && as && sendCorruptionSuccessPacket("success"))
 					System.out.println("Sent confirmation to breaker server");
 					
@@ -119,37 +120,36 @@ class ReplicaManagerBreakerListenUDPThread extends Thread
 		catch (IOException e)
 		{
 			aDatagramSocket.close();
-			bCrashed = true;
+			listenerCrashed = true;
 		}
 	}
 	
-	private boolean setORBreference(String pIPAddress) throws IOException
+	
+	private boolean setORBreference(String ipAddress) throws IOException
 	{
 		ORB orb = ORB.init(new String [1], null);
 		BufferedReader bufferedReader;
-		// Get the reference to the CORBA objects from the file
-		if(pIPAddress.length() >= 3 && pIPAddress.substring(0,3).equals("132"))
+		if(ipAddress.length() >= 3 && ipAddress.substring(0,3).equals("132"))
 		{
 			bufferedReader = new BufferedReader(new FileReader("NA_BIOR.txt"));
 		}
-		else if(pIPAddress.length() >= 2 && pIPAddress.substring(0,2).equals("93"))
+		else if(ipAddress.length() >= 2 && ipAddress.substring(0,2).equals("93"))
 		{
 			bufferedReader = new BufferedReader(new FileReader("EU_BIOR.txt"));
 		}
-		else if(pIPAddress.length() >= 3 && pIPAddress.substring(0,3).equals("182"))
+		else if(ipAddress.length() >= 3 && ipAddress.substring(0,3).equals("182"))
 		{
 			bufferedReader = new BufferedReader(new FileReader("AS_BIOR.txt"));
 		}
 		else
 		{
-			System.out.println("Invalid GeoLocation");
+			System.out.println("ERR: Unknown Region");
 			return false;
 		}
 		String stringORB = bufferedReader.readLine();
 		bufferedReader.close();
-		// Transform the reference string to CORBA object
 		org.omg.CORBA.Object reference_CORBA = orb.string_to_object(stringORB);
-		aInterfaceIDL = GameServerHelper.narrow(reference_CORBA);
+		gameServerReference = GameServerHelper.narrow(reference_CORBA);
 		
 		orb = null;
 		stringORB = null;
@@ -158,15 +158,15 @@ class ReplicaManagerBreakerListenUDPThread extends Thread
 		return true;
 	}
 
-	private boolean sendCorruptionSuccessPacket(String p_Data) {
+	private boolean sendCorruptionSuccessPacket(String requestData) {
 			DatagramSocket aSocket = null;
 			try 
 			{
 				aSocket = new DatagramSocket();    
-				byte [] m = p_Data.getBytes();
+				byte [] m = requestData.getBytes();
 				InetAddress aHost = InetAddress.getByName("localhost");
 				int serverPort = REPLICA_BREAKER_PORT;		                                                 
-				DatagramPacket request = new DatagramPacket(m,  p_Data.length(), aHost, serverPort);
+				DatagramPacket request = new DatagramPacket(m,  requestData.length(), aHost, serverPort);
 				aSocket.send(request);		
 				return true;
 			}
@@ -190,136 +190,114 @@ class ReplicaManagerBreakerListenUDPThread extends Thread
 class MainUDPThread extends Thread
 {
 	
-	private final String UDP_PARSER = "/";
+	private final String MSG_SEP = "/";
 	private int UDP_BUFFER_SIZE = 1200;
-
-	private enum ACTION_TO_PERFORM {
-		  PLAYER_CREATE_ACCOUNT,
-		  PLAYER_SIGN_IN,
-		  PLAYER_SIGN_OUT,
-		  PLAYER_TRANSFER_ACCOUNT,
-		  ADMIN_SIGN_IN,
-		  ADMIN_SIGN_OUT,
-		  ADMIN_GET_PLAYER_STATUS, 
-		  ADMIN_SUSPEND_PLAYER_ACCOUNT,
-		  RESTART_REPLICA
-	}
-	private static MainUDPThread replicatwo;
-	//protected Logger aLog;
-	private GameServer aInterfaceIDL;
-	private GameServerServant aNAGameServer;
-	private GameServerServant aEUGameServer;
-	private GameServerServant aASGameServer;
-	private Thread aNAThread;
-	private Thread aEUThread;
-	private Thread aASThread;
-	// For receiving from replica leader multicast
+	private static MainUDPThread replicaTwo;
+	private GameServer gameServerReference;
+	private GameServerServant NAGameServer;
+	private GameServerServant EUGameServer;
+	private GameServerServant ASGameServer;
+	private Thread NAServerThread;
+	private Thread EUServerThread;
+	private Thread ASServerThread;
 	private static MulticastSocket aMulticastSocket;
 	private DatagramPacket requestFromLeaderPacket;
 	private byte [] buffer;
-	private String [] messageArray;
-	// For sending replies to replica leader UDP
+	private String [] parameterList;
 	private DatagramSocket aSendSocket;
 	private DatagramPacket replyToLeaderPacket;
 	private String data;
-	// For receiving from replica manager UDP
-	protected ReplicaManagerBreakerListenUDPThread replicaManagerListener;
+	protected ReplicaManagerListenUDPThread replicaManagerListener;
 	
-	protected static int UDP_PORT_REPLICA_B = 3000;
+	protected static int REPLICA_TWO_PORT = 3000;
 	
-	protected static String RM_NAME = "RM";
-	protected static String LR_NAME = "LR";
-	protected static String RB_NAME = "RB";
+	protected static String REPLICA_MANAGER_IDENTIFIER = "RM";
+	protected static String REPLICA_LEADER_IDENTIFIER = "LR";
+	protected static String REPLICA_TWO_IDENTIFIER = "RB";
 	protected static String UDP_END_PARSE = "$";
-	protected static String RA_NA_NAME = "NA";
-	protected static String RA_EU_NAME = "EU";
-	protected static String RA_AS_NAME = "AS";
-	protected static int UDP_PORT_REPLICA_LEAD = 4000;
-
-	protected static int UDP_PORT_REPLICA_LEAD_MULTICAST = 4446;
+	protected static String R2_NA_NAME = "NA";
+	protected static String R2_EU_NAME = "EU";
+	protected static String R2_AS_NAME = "AS";
+	protected static int REPLICA_LEAD_PORT = 4000;
 	
-	protected static String UDP_ADDR_REPLICA_COMMUNICATION_MULTICAST = "224.0.0.2";
+	protected static int REPLICA_LEAD_MULTICAST_PORT = 4446;
 	
-	protected static String GeoLocationOfGameServerNA = "132";
-	protected static String GeoLocationOfGameServerEU = "93";
-	protected static String GeoLocationOfGameServerAS = "182";
+	protected static String MULTICAST_IP_ADDR = "224.0.0.2";
 	
-	// Main method which runs the UDP thread for replica A
+	protected static String PREFIX_NA = "132";
+	protected static String PREFIX_EU = "93";
+	protected static String PREFIX_AS = "182";
+	
 	public static void main(String[] args) throws InterruptedException 
 	{
 		String[] defaultArgs = {};
-		replicatwo = new MainUDPThread(UDP_PORT_REPLICA_B, defaultArgs);
+		replicaTwo = new MainUDPThread(REPLICA_TWO_PORT, defaultArgs);
 		while (true)
 		{
-			if(replicatwo.replicaManagerListener.shouldRestart())
+			if(replicaTwo.replicaManagerListener.shouldRestart())
 			{
-				System.out.println("Received RM Command to restart");
-				replicatwo.stopServers();
-				replicatwo.startServers();
-				replicatwo.replicaManagerListener.resetShouldRestart();
+				System.out.println("Restarting Replica Group Two...");
+				replicaTwo.stopReplicaGroup();
+				replicaTwo.startReplicaGroup();
+				replicaTwo.replicaManagerListener.resetShouldRestart();
 			}
-			if(replicatwo.replicaManagerListener.hasCrashed())
+			if(replicaTwo.replicaManagerListener.hasCrashed())
 			{
-				System.out.println("Crash detected in ReplicaA Replica Manager UDP Thread, restarting UDP");
+				System.out.println("ERR: Crashed. Restarting UDP listener...");
 				try {
-					replicatwo.replicaManagerListener = new ReplicaManagerBreakerListenUDPThread(UDP_PORT_REPLICA_B);
+					replicaTwo.replicaManagerListener = new ReplicaManagerListenUDPThread(REPLICA_TWO_PORT);
 				} catch (SocketException e) {
-					System.out.println("ReplicaA Replica Manager creating failed");
+					System.out.println("ERR: Failed to create Replica Manager listener");
 				}
-				replicatwo.replicaManagerListener.start();
+				replicaTwo.replicaManagerListener.start();
 			}
 			
 			Thread.sleep(200);
 		}
 	}
 	
-	private MainUDPThread(int pPort, String[] pArgs)
+	private MainUDPThread(int port, String[] args)
 	{
 		buffer = new byte [UDP_BUFFER_SIZE];
 		try {
-			aMulticastSocket = new MulticastSocket(UDP_PORT_REPLICA_LEAD_MULTICAST);
-			aMulticastSocket.joinGroup(InetAddress.getByName(UDP_ADDR_REPLICA_COMMUNICATION_MULTICAST));
+			aMulticastSocket = new MulticastSocket(REPLICA_LEAD_MULTICAST_PORT);
+			aMulticastSocket.joinGroup(InetAddress.getByName(MULTICAST_IP_ADDR));
 			aSendSocket = new DatagramSocket();
-			replicaManagerListener = new ReplicaManagerBreakerListenUDPThread(UDP_PORT_REPLICA_B);
-			// Start the UDP communication for replicatwo
-			System.out.println("UDP Running");
+			replicaManagerListener = new ReplicaManagerListenUDPThread(REPLICA_TWO_PORT);
+			System.out.println("Starting UDP Listener...");
 			replicaManagerListener.start();
 			start();
 		} catch (IOException e) {
 			e.printStackTrace();
-			System.out.println("UDP Socket creation failed");
+			System.out.println("ERR: Failed to create UDP Socket...");
 		}
 	}
 	
-	/* sets the interfaceIDL reference based on the Geo location in the given pIPAddress 
-	 * returns true if successful */
-	private boolean setORBreference(String pIPAddress) throws IOException
+	private boolean setORBreference(String ipAddress) throws IOException
 	{
 		ORB orb = ORB.init(new String [1], null);
 		BufferedReader bufferedReader;
-		// Get the reference to the CORBA objects from the file
-		if(pIPAddress.length() >= 3 && pIPAddress.substring(0,3).equals(GeoLocationOfGameServerNA))
+		if(ipAddress.length() >= 3 && ipAddress.substring(0,3).equals(PREFIX_NA))
 		{
-			bufferedReader = new BufferedReader(new FileReader(RA_NA_NAME + "_BIOR.txt"));
+			bufferedReader = new BufferedReader(new FileReader(R2_NA_NAME + "_BIOR.txt"));
 		}
-		else if(pIPAddress.length() >= 2 && pIPAddress.substring(0,2).equals(GeoLocationOfGameServerEU))
+		else if(ipAddress.length() >= 2 && ipAddress.substring(0,2).equals(PREFIX_EU))
 		{
-			bufferedReader = new BufferedReader(new FileReader(RA_EU_NAME + "_BIOR.txt"));
+			bufferedReader = new BufferedReader(new FileReader(R2_EU_NAME + "_BIOR.txt"));
 		}
-		else if(pIPAddress.length() >= 3 && pIPAddress.substring(0,3).equals(GeoLocationOfGameServerAS))
+		else if(ipAddress.length() >= 3 && ipAddress.substring(0,3).equals(PREFIX_AS))
 		{
-			bufferedReader = new BufferedReader(new FileReader(RA_AS_NAME + "_BIOR.txt"));
+			bufferedReader = new BufferedReader(new FileReader(R2_AS_NAME + "_BIOR.txt"));
 		}
 		else
 		{
-			System.out.println("Invalid GeoLocation");
+			System.out.println("Unknown Region");
 			return false;
 		}
 		String stringORB = bufferedReader.readLine();
 		bufferedReader.close();
-		// Transform the reference string to CORBA object
 		org.omg.CORBA.Object reference_CORBA = orb.string_to_object(stringORB);
-		aInterfaceIDL = GameServerHelper.narrow(reference_CORBA);
+		gameServerReference = GameServerHelper.narrow(reference_CORBA);
 		
 		orb = null;
 		stringORB = null;
@@ -328,55 +306,58 @@ class MainUDPThread extends Thread
 		return true;
 	}
 	
-	/* Creates and starts the servers */
-	protected boolean startServers()
+	protected boolean startReplicaGroup()
 	{
 		try
 		{
-			// Create Game Servers within each thread
-			aNAGameServer = new GameServerServant(RA_NA_NAME, new ArrayList<>(Arrays.asList(9990,9991)),9989);
-			aEUGameServer = new GameServerServant(RA_EU_NAME, new ArrayList<>(Arrays.asList(9989,9991)),9990);
-			aASGameServer = new GameServerServant(RA_AS_NAME, new ArrayList<>(Arrays.asList(9989,9990)),9991);
-			
-			// Start the Threads running each runnable Game Server
-			aNAThread = new Thread(aNAGameServer);
-			aEUThread = new Thread(aEUGameServer);
-			aASThread = new Thread(aASGameServer);
-			aNAThread.start();
-			aEUThread.start();
-			aASThread.start();
-			System.out.println("Restarted All Servers");
+			createRegionServerInstances();
+			spawnRegionServerThreads();
+			System.out.println("All region servers restarted...");
 		}
 		catch(Exception e)
 		{
-			System.out.println("Error starting the servers: " + e.getMessage());
+			System.out.println("ERR: Failed to restart region servers " + e.getMessage());
 			return false;
 		}
 		return true;
 	}
+
+	private void spawnRegionServerThreads() {
+		NAServerThread = new Thread(NAGameServer);
+		EUServerThread = new Thread(EUGameServer);
+		ASServerThread = new Thread(ASGameServer);
+		NAServerThread.start();
+		EUServerThread.start();
+		ASServerThread.start();
+	}
+
+	private void createRegionServerInstances() throws UnknownServerRegionException {
+		NAGameServer = new GameServerServant(R2_NA_NAME, new ArrayList<>(Arrays.asList(9990,9991)),9989);
+		EUGameServer = new GameServerServant(R2_EU_NAME, new ArrayList<>(Arrays.asList(9989,9991)),9990);
+		ASGameServer = new GameServerServant(R2_AS_NAME, new ArrayList<>(Arrays.asList(9989,9990)),9991);
+	}
 	
-	/* Stops the servers and clears their resources */
-	protected boolean stopServers()
+	protected boolean stopReplicaGroup()
 	{
 		try
 		{
-			aNAThread = null;
-			aEUThread = null;
-			aASThread = null;
-			if(aNAGameServer != null)
-				aNAGameServer.freeServerResources();
-			if(aEUGameServer != null)
-				aEUGameServer.freeServerResources();
-			if(aASGameServer != null)
-				aASGameServer.freeServerResources();
-			aNAGameServer = null;
-			aEUGameServer = null;
-			aASGameServer = null;
-			System.out.println("Stopped All Servers");
+			NAServerThread = null;
+			EUServerThread = null;
+			ASServerThread = null;
+			if(NAGameServer != null)
+				NAGameServer.destroy();
+			if(EUGameServer != null)
+				EUGameServer.destroy();
+			if(ASGameServer != null)
+				ASGameServer.destroy();
+			NAGameServer = null;
+			EUGameServer = null;
+			ASGameServer = null;
+			System.out.println("Halting all region servers...");
 		}
 		catch(Exception e)
 		{
-			System.out.println("Error stopping the servers: " + e.getMessage());
+			System.out.println("ERR: Failed to halt region servers " + e.getMessage());
 			return false;
 		}
 		return true;
@@ -386,11 +367,10 @@ class MainUDPThread extends Thread
 	public void run ()
 	{
 		while(true)
-			handleCommunication();
+			performAction();
 	}
 
-	// Takes care of requests from replica leader multicast and sends replies to the replica leader UDP listener
-	private void handleCommunication() 
+	private void performAction() 
 	{
 		try 
 		{
@@ -398,96 +378,94 @@ class MainUDPThread extends Thread
 			requestFromLeaderPacket = new DatagramPacket(buffer, buffer.length);
 			aMulticastSocket.receive(requestFromLeaderPacket);
 			String resp = new String(requestFromLeaderPacket.getData());
-			System.out.println("FROM RL -- " + resp);
-			messageArray = resp.split(UDP_PARSER);
+			parameterList = resp.split(MSG_SEP);
 			requestFromLeaderPacket.setLength(buffer.length);
 			
-			for(int i =0; i<messageArray.length; i++) {
-				messageArray[i] = messageArray[i].trim();
-			}
+			sanitizeRequest();
 			
-			
-			if(messageArray[0].equals(LR_NAME))
+			if(parameterList[0].equals(REPLICA_LEADER_IDENTIFIER))
 			{
-				messageArray[1] = messageArray[1].trim();
-				
-				if(messageArray[1].equals(ACTION_TO_PERFORM.PLAYER_CREATE_ACCOUNT.name()))
-				{
-					messageArray[6] = messageArray[6].trim();
-					setORBreference(messageArray[6]);
-					String r_Result = aInterfaceIDL.createPlayerAccount(messageArray[2], messageArray[3], messageArray[4],
-							 messageArray[5], messageArray[6], Integer.parseInt(messageArray[7].trim()));
-					data = RB_NAME + UDP_PARSER + r_Result + UDP_PARSER + UDP_END_PARSE;
-				}
-				else if(messageArray[1].equals(ACTION_TO_PERFORM.PLAYER_SIGN_IN.name()))
-				{
-					messageArray[4] = messageArray[4].trim();
-					setORBreference(messageArray[4]);
-					String r_Result = aInterfaceIDL.playerSignIn(messageArray[2], messageArray[3], messageArray[4]);
-					data = RB_NAME + UDP_PARSER + r_Result + UDP_PARSER + UDP_END_PARSE;
-				}
-				else if(messageArray[1].equals(ACTION_TO_PERFORM.PLAYER_SIGN_OUT.name()))
-				{
-					messageArray[3] = messageArray[3].trim();
-					setORBreference(messageArray[3]);
-					String r_Result = aInterfaceIDL.playerSignOut(messageArray[2], messageArray[3]);				
-					data = RB_NAME + UDP_PARSER + r_Result + UDP_PARSER + UDP_END_PARSE;
-				}
-				else if(messageArray[1].equals(ACTION_TO_PERFORM.ADMIN_SIGN_IN.name()))
-				{
-					messageArray[4] = messageArray[4].trim();
-					setORBreference(messageArray[4]);
-					String r_Result = aInterfaceIDL.adminSignIn(messageArray[2], messageArray[3], messageArray[4]);
-					data = RB_NAME + UDP_PARSER + r_Result + UDP_PARSER + UDP_END_PARSE;
-				}
-				else if(messageArray[1].equals(ACTION_TO_PERFORM.ADMIN_SIGN_OUT.name()))
-				{
-					messageArray[3] = messageArray[3].trim();
-					setORBreference(messageArray[3]);
-					String r_Result = aInterfaceIDL.adminSignOut(messageArray[2], messageArray[3]);
-					data = RB_NAME + UDP_PARSER + r_Result + UDP_PARSER + UDP_END_PARSE;
-				}
-				else if(messageArray[1].equals(ACTION_TO_PERFORM.PLAYER_TRANSFER_ACCOUNT.name()))
-				{
-					messageArray[5] = messageArray[5].trim();
-					setORBreference(messageArray[4]);
-					String r_Result = aInterfaceIDL.transferAccount(messageArray[2], messageArray[3], messageArray[4], messageArray[5]);
-					data = RB_NAME + UDP_PARSER + r_Result + UDP_PARSER + UDP_END_PARSE;
-				}
-				else if(messageArray[1].equals(ACTION_TO_PERFORM.ADMIN_SUSPEND_PLAYER_ACCOUNT.name()))
-				{
-					messageArray[5] = messageArray[5].trim();
-					setORBreference(messageArray[4]);
-					String r_Result = aInterfaceIDL.suspendAccount(messageArray[2], messageArray[3], messageArray[4], messageArray[5]);
-					data = RB_NAME + UDP_PARSER + r_Result + UDP_PARSER + UDP_END_PARSE;
-				}
-				else if(messageArray[1].equals(ACTION_TO_PERFORM.ADMIN_GET_PLAYER_STATUS.name())){
-					messageArray[4] = messageArray[4].trim();
-					setORBreference(messageArray[4]);
-					data = RB_NAME + UDP_PARSER + 
-							aInterfaceIDL.getPlayerStatus(messageArray[2], messageArray[3], messageArray[4]) +
-							UDP_PARSER + UDP_END_PARSE;
-				}
+				performRequestedAction();
 				buffer = new byte [UDP_BUFFER_SIZE];
 				buffer = data.getBytes();
-				replyToLeaderPacket = new DatagramPacket(buffer, data.length(),  InetAddress.getByName("localhost"), UDP_PORT_REPLICA_LEAD);
+				replyToLeaderPacket = new DatagramPacket(buffer, data.length(),  InetAddress.getByName("localhost"), REPLICA_LEAD_PORT);
 				aSendSocket.send(replyToLeaderPacket);
-				System.out.println("Sent back results to replica leader : " + data.toString());
+				System.out.println("Dispatching response to Replica Leader..." + data.toString());
 				data = "";
 			}
-			
 		}
 		catch (IOException e)
 		{
 			e.printStackTrace();
-			System.out.println("UDP crashed, closing UDP Socket");
+			System.out.println("ERR: Crash detected. UDP Socket is closed. Attempting to create new UDP Socket...");
 			aSendSocket.close();
-			System.out.println("UDP crashed, creating new UDP Socket");
 			try {
 				aSendSocket = new DatagramSocket();
 			} catch (SocketException e1) {
-				System.out.println("UDP Socket creation failed");
+				System.out.println("ERR: Failed to create UDP Socket");
 			}
 		}
+	}
+
+	private void sanitizeRequest() {
+		for(int i =0; i<parameterList.length; i++) {
+			parameterList[i] = parameterList[i].trim();
+		}
+	}
+
+	private void performRequestedAction() throws IOException {
+		switch(parameterList[1]) {
+			case "PLAYER_CREATE_ACCOUNT": {
+				setORBreference(parameterList[6]);
+				String orbResponse = gameServerReference.createPlayerAccount(parameterList[2], parameterList[3], parameterList[4],
+						 parameterList[5], parameterList[6], Integer.parseInt(parameterList[7]));
+				data = packageResponseForRL(orbResponse);
+				break;
+			}
+			case "PLAYER_SIGN_IN": {
+				setORBreference(parameterList[4]);
+				String orbResponse = gameServerReference.playerSignIn(parameterList[2], parameterList[3], parameterList[4]);
+				data = packageResponseForRL(orbResponse);
+				break;
+			}
+			case "PLAYER_SIGN_OUT": {
+				setORBreference(parameterList[3]);
+				String orbResponse = gameServerReference.playerSignOut(parameterList[2], parameterList[3]);				
+				data = packageResponseForRL(orbResponse);
+				break;
+			}
+			case "ADMIN_SIGN_IN": {
+				setORBreference(parameterList[4]);
+				String orbResponse = gameServerReference.adminSignIn(parameterList[2], parameterList[3], parameterList[4]);
+				data = packageResponseForRL(orbResponse);
+				break;
+			}
+			case "ADMIN_SIGN_OUT": {
+				setORBreference(parameterList[3]);
+				String orbResponse = gameServerReference.adminSignOut(parameterList[2], parameterList[3]);
+				data = packageResponseForRL(orbResponse);
+			}
+			case "PLAYER_TRANSFER_ACCOUNT": {
+				setORBreference(parameterList[4]);
+				String orbResponse = gameServerReference.transferAccount(parameterList[2], parameterList[3], parameterList[4], parameterList[5]);
+				data = packageResponseForRL(orbResponse);
+				break;
+			}
+			case "ADMIN_SUSPEND_PLAYER_ACCOUNT": {
+				setORBreference(parameterList[4]);
+				String orbResponse = gameServerReference.suspendAccount(parameterList[2], parameterList[3], parameterList[4], parameterList[5]);
+				data = packageResponseForRL(orbResponse);
+				break;
+			}
+			case "ADMIN_GET_PLAYER_STATUS": {
+				setORBreference(parameterList[4]);
+				data = packageResponseForRL(gameServerReference.getPlayerStatus(parameterList[2], parameterList[3], parameterList[4]));
+				break;
+			}
+		}
+	}
+	
+	private String packageResponseForRL(String responseData) {
+		return REPLICA_TWO_IDENTIFIER + MSG_SEP + responseData + MSG_SEP + UDP_END_PARSE;
 	}
 }

@@ -19,8 +19,6 @@ import org.omg.PortableServer.POA;
 import org.omg.PortableServer.POAHelper;
 
 public class GameServerFrontEnd extends GameServerPOA implements Runnable {
-	private static Queue <List<Object>> fifoQueue;
-	
 	private final int FRONT_END_PORT = 6000;
 	private final int REPLICA_LEAD_PORT = 4000;
 	
@@ -34,10 +32,9 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
 		  ADMIN_GET_PLAYER_STATUS, 
 		  ADMIN_SUSPEND_PLAYER_ACCOUNT
 	}
-	
+	private static Queue <List<Object>> fifoQueue;
 	private static GameServerORBThread orbThread;
 	private static GameServerFEThread udpThread;
-
 	private DatagramSocket sendSocket;
 	private DatagramPacket requestToReplicaLeader;
 	private byte [] message;

@@ -14,17 +14,21 @@ public class MainUDPThread extends Thread {
 	private static final int REPLICA_LEAD_PORT = 4000;
 	private static final int REPLICA_LEAD_MULTICAST_PORT = 4446;
 	private static final String REPLICA_COMMUNICATION_MULTICAST_ADDR = "224.0.0.2";
-	
 	private static final String MSG_SEP = "/";
 	private static final int BUFFER_SIZE = 1200;
 	private static final String NAME_REPLICA_LEAD = "LR";
-	
 	private String extractedDatagram;
+	
+	public static void main(String[] args)  
+	{
+		MainUDPThread replicaLeaderThread = new MainUDPThread();
+		replicaLeaderThread.start();
+	}
 	
 	@Override
 	public void run() {		
 		try {
-			startUdpServer();
+			listenForRequests();
 		} 
 		catch (Exception e) {
 			e.printStackTrace();
@@ -34,7 +38,7 @@ public class MainUDPThread extends Thread {
 	
 	MainUDPThread(){ }
 	
-	protected void startUdpServer() throws InvalidName, ServantAlreadyActive, WrongPolicy, ObjectNotActive, AdapterInactive, InterruptedException {	
+	protected void listenForRequests() throws InvalidName, ServantAlreadyActive, WrongPolicy, ObjectNotActive, AdapterInactive, InterruptedException {	
 		DatagramSocket aSocket = null;
 		try {
 	    	aSocket = new DatagramSocket(REPLICA_LEAD_PORT);
@@ -50,60 +54,7 @@ public class MainUDPThread extends Thread {
   					String requestSender = extractSender(requestData);
   					if(requestSender != null)
   					{
-  						switch(requestSender) 
-  						{
-  				    		case "FE":
-  				    				System.out.println("Receiving Datagram from Front End...");
-  				    				RequestProcessor requestProcessorFE = new RequestProcessor();
-  				    				ReplicaRequestProcessor.requestProcessed = false;
-  				    				if(extractedDatagram != "")
-  				    				{
-  				    				
-  	  				    				String multicastDatagramData =  NAME_REPLICA_LEAD + MSG_SEP + extractedDatagram;
-  				    					System.out.println("Datagram Data sent to Front End - " + multicastDatagramData);
-  				    					ReplicaRequestProcessor.leaderResponse = requestProcessorFE.performORBAction(extractedDatagram);
-  	  				    				sendMulticastToReplicaGroups(multicastDatagramData);
-  				    					
-  				    				}	    	
-  				    				
-  				    				requestProcessorFE = null;
-  				    				extractedDatagram = "";  				    				
-  				    				break;
-  				    				
-  				    		case "RM":
-  				    				System.out.println("Receiving Datagram from Replica Manager... - " + extractedDatagram);
-  				    				RequestProcessor requestProcessorRM = new RequestProcessor();
-  				    				requestProcessorRM.ProcessRMRequests(extractedDatagram);
-  				    				extractedDatagram = "";
-  				    			break;
-  				    		
-  				    		case "RA":
-  				    				// result of a certain request
-  				    				System.out.println("Receiving Datagram from Replica 1... - " + extractedDatagram);
-  				    				
-  				    				if(extractedDatagram != "") {
-  				    					ReplicaRequestProcessor.replicaOneResponse = extractedDatagram;
-  				    					ReplicaRequestProcessor.verifyConsistentResults();
-  				    				}
-  				    				
-  				    				extractedDatagram = "";
-  				    			break;
-  				    		
-  				    		case "RB":
-  				    				// result of a certain request
-  				    			System.out.println("Receiving Datagram from Replica 2... - " + extractedDatagram);
-  				    			if(extractedDatagram != ""){
-				    					ReplicaRequestProcessor.replicaTwoResponse = extractedDatagram;
-				    					ReplicaRequestProcessor.verifyConsistentResults();
-				    				}
-				    				
-				    				extractedDatagram = "";
-  				    			break;
-  				    			
-  				    		default:
-  				    				System.out.println("ERR: Sender is UNKNOWN.");
-  				    				break;
-  						}	
+  						handleRequest(requestSender);	
   					}
   				}
     		}
@@ -121,6 +72,61 @@ public class MainUDPThread extends Thread {
 			if(aSocket != null) aSocket.close();
 		}
     }
+
+	private void handleRequest(String requestSender) throws InvalidName, ServantAlreadyActive, WrongPolicy,
+			ObjectNotActive, FileNotFoundException, AdapterInactive, IOException, InterruptedException {
+		switch(requestSender) 
+		{
+			case "FE":
+					System.out.println("Receiving Datagram from Front End...");
+					RequestProcessor requestProcessorFE = new RequestProcessor();
+					ReplicaRequestProcessor.requestProcessed = false;
+					if(extractedDatagram != "")
+					{
+					
+						String multicastDatagramData =  NAME_REPLICA_LEAD + MSG_SEP + extractedDatagram;
+						System.out.println("Datagram Data sent to Front End - " + multicastDatagramData);
+						ReplicaRequestProcessor.leaderResponse = requestProcessorFE.performORBAction(extractedDatagram);
+						sendMulticastToReplicaGroups(multicastDatagramData);
+						
+					}	    	
+					requestProcessorFE = null;
+					extractedDatagram = "";  				    				
+					break;
+					
+			case "RM":
+					System.out.println("Receiving Datagram from Replica Manager... - " + extractedDatagram);
+					RequestProcessor requestProcessorRM = new RequestProcessor();
+					requestProcessorRM.ProcessRMRequests(extractedDatagram);
+					extractedDatagram = "";
+				break;
+			
+			case "RA":
+					System.out.println("Receiving Datagram from Replica 1... - " + extractedDatagram);
+					
+					if(extractedDatagram != "") {
+						ReplicaRequestProcessor.replicaOneResponse = extractedDatagram;
+						ReplicaRequestProcessor.verifyConsistentResults();
+					}
+					
+					extractedDatagram = "";
+				break;
+			
+			case "RB":
+				System.out.println("Receiving Datagram from Replica 2... - " + extractedDatagram);
+				if(extractedDatagram != ""){
+						ReplicaRequestProcessor.replicaTwoResponse = extractedDatagram;
+						ReplicaRequestProcessor.verifyConsistentResults();
+					}
+					
+					extractedDatagram = "";
+				break;
+				
+			default:
+					System.out.println("ERR: Sender is UNKNOWN.");
+					break;
+		}
+	}
 	
 	public static boolean sendPacket(String requestData, int port) {
 		DatagramSocket aSocket = null;
@@ -183,7 +189,6 @@ public class MainUDPThread extends Thread {
 		return false;
 	}
 	
-	// Parse the datagram and extract the senders name into a String Array
 	protected String extractSender(String responseData) {
 		String extractedParts[] = responseData.split(MSG_SEP);
 		if(extractedParts != null)
@@ -195,10 +200,4 @@ public class MainUDPThread extends Thread {
 		return null;
 	}
 	
-		
-	public static void main(String[] args)  
-	{
-		MainUDPThread replicaLeaderThread = new MainUDPThread();
-		replicaLeaderThread.start();
-	}
 }

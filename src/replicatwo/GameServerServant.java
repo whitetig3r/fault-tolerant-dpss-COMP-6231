@@ -93,7 +93,7 @@ public class GameServerServant extends GameServerPOA implements Runnable {
 		 runRegionUdpServer();
 	}
 	
-	protected void freeServerResources() {
+	protected void destroy() {
 		playerHash.clear();
 		if(aSocket != null) aSocket.close();
 	}
