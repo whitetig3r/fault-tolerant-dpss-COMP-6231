@@ -181,7 +181,7 @@ public class AdministratorsClient extends CoreClient {
     String stringORB = "";
 
     try {
-      BufferedReader bufferedReader = new BufferedReader(new FileReader("FE" + "_IOR.txt"));
+      BufferedReader bufferedReader = new BufferedReader(new FileReader("FRONT_END" + "_IOR.txt"));
       stringORB = bufferedReader.readLine();
       bufferedReader.close();
     } catch (IOException e) {

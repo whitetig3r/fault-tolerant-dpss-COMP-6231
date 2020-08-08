@@ -6,6 +6,8 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import org.omg.CORBA.ORBPackage.InvalidName;
 import org.omg.PortableServer.POAManagerPackage.AdapterInactive;
 import org.omg.PortableServer.POAPackage.ObjectNotActive;
@@ -19,7 +21,7 @@ public class MainUDPThread extends Thread {
   private static final String REPLICA_COMMUNICATION_MULTICAST_ADDR = "224.0.0.2";
   private static final String MSG_SEP = "/";
   private static final int BUFFER_SIZE = 1200;
-  private static final String NAME_REPLICA_LEAD = "LR";
+  private static final String NAME_REPLICA_LEAD = "REPLICA_LEADER";
   private String extractedDatagram;
 
   public static void main(String[] args) {
@@ -72,7 +74,7 @@ public class MainUDPThread extends Thread {
       throws InvalidName, ServantAlreadyActive, WrongPolicy, ObjectNotActive, FileNotFoundException,
       AdapterInactive, IOException, InterruptedException {
     switch (requestSender) {
-      case "FE":
+      case "FRONT_END":
         System.out.println("Receiving Datagram from Front End...");
         RequestProcessor requestProcessorFE = new RequestProcessor();
         ReplicaRequestProcessor.requestProcessed = false;
@@ -89,14 +91,14 @@ public class MainUDPThread extends Thread {
         extractedDatagram = "";
         break;
 
-      case "RM":
+      case "REPLICA_MANAGER":
         System.out.println("Receiving Datagram from Replica Manager... - " + extractedDatagram);
         RequestProcessor requestProcessorRM = new RequestProcessor();
         requestProcessorRM.ProcessRMRequests(extractedDatagram);
         extractedDatagram = "";
         break;
 
-      case "RA":
+      case "REPLICA_ONE":
         System.out.println("Receiving Datagram from Replica 1... - " + extractedDatagram);
 
         if (extractedDatagram != "") {
@@ -107,7 +109,7 @@ public class MainUDPThread extends Thread {
         extractedDatagram = "";
         break;
 
-      case "RB":
+      case "REPLICA_TWO":
         System.out.println("Receiving Datagram from Replica 2... - " + extractedDatagram);
         if (extractedDatagram != "") {
           ReplicaRequestProcessor.replicaTwoResponse = extractedDatagram;
@@ -177,7 +179,9 @@ public class MainUDPThread extends Thread {
   protected String extractSender(String responseData) {
     String extractedParts[] = responseData.split(MSG_SEP);
     if (extractedParts != null) {
-      extractedDatagram = responseData.substring(3, responseData.length());
+      extractedDatagram =
+          Arrays.stream(Arrays.copyOfRange(extractedParts, 1, extractedParts.length))
+              .collect(Collectors.joining(MSG_SEP));
       return extractedParts[0];
     }
     System.out.println("ERR: Failed to extract sender information");

@@ -94,7 +94,7 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
 
       org.omg.CORBA.Object ref = rootpoa.id_to_reference(objectId);
       String stringifiedORB = orb.object_to_string(ref);
-      PrintWriter file = new PrintWriter("FE" + "_IOR.txt");
+      PrintWriter file = new PrintWriter("FRONT_END" + "_IOR.txt");
       file.print(stringifiedORB);
       file.close();
 
@@ -125,7 +125,7 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
   private void packageAndDispatchRequest(ACTION_TO_PERFORM action, List<Object> argList) {
     try {
       List<Object> tempList = new ArrayList<Object>();
-      tempList.add("FE");
+      tempList.add("FRONT_END");
       tempList.add(action.name());
       tempList.addAll(argList);
       data = tempList.stream().map(String::valueOf).collect(Collectors.joining("/"));

@@ -8,7 +8,7 @@ public class ReplicaRequestProcessor {
   static boolean requestProcessed;
   private static int replicaResponsePendingCounter;
   private static final String MSG_SEP = "/";
-  private static final String NAME_REPLICA_LEAD = "LR";
+  private static final String NAME_REPLICA_LEAD = "REPLICA_LEADER";
   private static final int FRONT_END_PORT = 6000;
   private static final int REPLICA_MANAGER_PORT = 5000;
 
@@ -52,11 +52,11 @@ public class ReplicaRequestProcessor {
       String[] replicaOneResponseParts, String[] replicaTwoResponseParts) {
     String inconsistenReplicaIdentifier = "";
     if (!leaderResponseParts[0].equals(replicaOneResponseParts[0])) {
-      inconsistenReplicaIdentifier = "RA";
+      inconsistenReplicaIdentifier = "REPLICA_ONE";
     }
 
     else if (!leaderResponseParts[0].equals(replicaTwoResponseParts[0])) {
-      inconsistenReplicaIdentifier = "RB";
+      inconsistenReplicaIdentifier = "REPLICA_TWO";
     }
     String requestDataFrontEnd = NAME_REPLICA_LEAD;
     String result = "";

@@ -1,7 +1,10 @@
 package replicamanager;
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketException;
 
 public class ReplicaManager {
   static int ipAddress = 0;
@@ -16,10 +19,10 @@ public class ReplicaManager {
   private static final int REPLICA_LEAD_PORT = 4000;
   private static final int REPLICA_MANAGER_PORT = 5000;
   private static int UDP_BUFFER_SIZE = 1200;
-  private final static String REPLICA_MANAGER_IDENTIFIER = "RM";
-  private final static String REPLICA_ONE_IDENTIFIER = "RA";
-  private final static String REPLICA_TWO_IDENTIFIER = "RB";
-  private final static String REPLICA_LEAD_IDENTIFIER = "LR";
+  private final static String REPLICA_MANAGER_IDENTIFIER = "REPLICA_MANAGER";
+  private final static String REPLICA_ONE_IDENTIFIER = "REPLICA_ONE";
+  private final static String REPLICA_TWO_IDENTIFIER = "REPLICA_TWO";
+  private final static String REPLICA_LEAD_IDENTIFIER = "REPLICA_LEADER";
   private static int replicaOnecounter = 0;
   private static int replicaTwoCounter = 0;
 
@@ -90,7 +93,6 @@ public class ReplicaManager {
       InetAddress aHost = InetAddress.getByName("localhost");
       DatagramPacket request = new DatagramPacket(m, m.length, aHost, UDPcommunicationPort);
       aSocket.send(request);
-
     } catch (SocketException e) {
       System.out.println("Socket " + e.getMessage());
     } catch (IOException e) {

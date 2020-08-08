@@ -41,8 +41,8 @@ class ReplicaManagerListenUDPThread extends Thread {
 
   private final String MSG_SEP = "/";
   private int UDP_BUFFER_SIZE = 1200;
-  protected static String BREAKER_IDENTIFIER = "BRE";
-  private static final String REPLICA_MANAGER_IDENTIFIER = "RM";
+  protected static String BREAKER_IDENTIFIER = "REPLICA_BREAKER";
+  private static final String REPLICA_MANAGER_IDENTIFIER = "REPLICA_MANAGER";
   protected static int REPLICA_BREAKER_PORT = 9393;
 
   private enum ACTION_TO_PERFORM {
@@ -175,9 +175,9 @@ class MainUDPThread extends Thread {
 
   protected static int REPLICA_TWO_PORT = 3000;
 
-  protected static String REPLICA_MANAGER_IDENTIFIER = "RM";
-  protected static String REPLICA_LEADER_IDENTIFIER = "LR";
-  protected static String REPLICA_TWO_IDENTIFIER = "RB";
+  protected static String REPLICA_MANAGER_IDENTIFIER = "REPLICA_MANAGER";
+  protected static String REPLICA_LEADER_IDENTIFIER = "REPLICA_LEADER";
+  protected static String REPLICA_TWO_IDENTIFIER = "REPLICA_TWO";
   protected static String UDP_END_PARSE = "$";
   protected static String R2_NA_NAME = "NA";
   protected static String R2_EU_NAME = "EU";
