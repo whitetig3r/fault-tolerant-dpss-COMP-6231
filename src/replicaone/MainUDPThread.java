@@ -35,7 +35,7 @@ class ReplicaManagerListenUDPThread extends Thread {
   private DatagramPacket requestFromReplicaManager;
   private GameServer gameServerReference;
   private byte[] buffer;
-  private String[] messageArray;
+  private String[] parameterList;
 
   private final String MSG_SEP = "/";
   private int UDP_BUFFER_SIZE = 1200;
@@ -77,13 +77,13 @@ class ReplicaManagerListenUDPThread extends Thread {
     try {
       requestFromReplicaManager = new DatagramPacket(buffer, buffer.length);
       aDatagramSocket.receive(requestFromReplicaManager);
-      messageArray = (new String(requestFromReplicaManager.getData())).split(MSG_SEP);
-      if (messageArray[0].equals(REPLICA_MANAGER_IDENTIFIER)) {
-        messageArray[1] = messageArray[1].trim();
-        if (messageArray[1].equals(ACTION_TO_PERFORM.RESTART_REPLICA.name())) {
+      parameterList = (new String(requestFromReplicaManager.getData())).split(MSG_SEP);
+      if (parameterList[0].equals(REPLICA_MANAGER_IDENTIFIER)) {
+        parameterList[1] = parameterList[1].trim();
+        if (parameterList[1].equals(ACTION_TO_PERFORM.RESTART_REPLICA.name())) {
           listenerRestartNeeded = true;
         }
-      } else if (messageArray[0].equals(BREAKER_IDENTIFIER)) {
+      } else if (parameterList[0].equals(BREAKER_IDENTIFIER)) {
         setORBreference("132.168.2.22");
         boolean na = gameServerReference.initiateCorruption();
         setORBreference("93.168.2.22");
