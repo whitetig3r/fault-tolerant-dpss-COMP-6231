@@ -7,6 +7,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.Arrays;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 import org.omg.CORBA.ORBPackage.InvalidName;
 import org.omg.PortableServer.POAManagerPackage.AdapterInactive;
@@ -23,6 +24,7 @@ public class MainUDPThread extends Thread {
   private static final int BUFFER_SIZE = 1200;
   private static final String NAME_REPLICA_LEAD = "REPLICA_LEADER";
   private String extractedDatagram;
+  public static CopyOnWriteArrayList<String> receivedDatagrams = new CopyOnWriteArrayList<String>();
 
   public static void main(String[] args) {
     MainUDPThread replicaLeaderThread = new MainUDPThread();
@@ -81,6 +83,7 @@ public class MainUDPThread extends Thread {
         if (extractedDatagram != "") {
 
           String multicastDatagramData = NAME_REPLICA_LEAD + MSG_SEP + extractedDatagram;
+          receivedDatagrams.add(extractedDatagram);
           System.out.println("Datagram Data sent to Front End - " + multicastDatagramData);
           ReplicaRequestProcessor.leaderResponse =
               requestProcessorFE.performORBAction(extractedDatagram);
@@ -147,7 +150,7 @@ public class MainUDPThread extends Thread {
     return false;
   }
 
-  protected boolean sendMulticastToReplicaGroups(String requestData)
+  protected static boolean sendMulticastToReplicaGroups(String requestData)
       throws IOException, InterruptedException {
     DatagramSocket socket = null;
 

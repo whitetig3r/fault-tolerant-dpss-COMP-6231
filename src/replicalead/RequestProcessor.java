@@ -3,7 +3,6 @@ package replicalead;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-
 import org.omg.CORBA.ORB;
 import org.omg.CORBA.ORBPackage.InvalidName;
 import org.omg.PortableServer.POAManagerPackage.AdapterInactive;
@@ -22,7 +21,7 @@ public class RequestProcessor {
   private static final String insufficientParametersError =
       "ERR: Wrong number of parameters in this list!";
 
-  private GameServer getServantORB(String ipAddress) {
+  public GameServer getServantORB(String ipAddress) {
     GameServer aGameServerRef = null;
     String args[] = null;
 

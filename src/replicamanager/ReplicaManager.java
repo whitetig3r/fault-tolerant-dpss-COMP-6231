@@ -63,12 +63,14 @@ public class ReplicaManager {
       replicaOnecounter++;
       if (replicaOnecounter >= 3) {
         replicaOnecounter = 0;
+        System.out.println("Restarting Replica Group One..");
         stopReplicaGroup(REPLICA_ONE_PORT);
       }
     } else if (parameterList[1].contains(REPLICA_TWO_IDENTIFIER)) {
       replicaTwoCounter++;
       if (replicaTwoCounter >= 3) {
         replicaTwoCounter = 0;
+        System.out.println("Restarting Replica Group Two..");
         stopReplicaGroup(REPLICA_TWO_PORT);
       }
     }
@@ -105,8 +107,6 @@ public class ReplicaManager {
       }
     }
   }
-
-
 
   protected static boolean stopReplicaGroup(int portNumber) {
     int replicaGroupPort = portNumber;

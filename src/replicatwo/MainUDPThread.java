@@ -10,9 +10,7 @@ import java.net.MulticastSocket;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Arrays;
-
 import org.omg.CORBA.ORB;
-
 import exceptions.UnknownServerRegionException;
 
 class ORBThread extends Thread {
@@ -322,6 +320,16 @@ class MainUDPThread extends Thread {
       aMulticastSocket.receive(requestFromLeaderPacket);
       String resp = new String(requestFromLeaderPacket.getData());
       parameterList = resp.split(MSG_SEP);
+
+      for (int i = 0; i < parameterList.length; i++) {
+        if (parameterList[i].equals("REPLICA_TWO_REPLAY")) {
+          parameterList = Arrays.stream(parameterList)
+              .filter(el -> !el.equals("REPLICA_TWO_REPLAY")).toArray(String[]::new);
+          break;
+        } else if (parameterList[i].equals("REPLICA_ONE_REPLAY"))
+          return;
+      }
+
       requestFromLeaderPacket.setLength(buffer.length);
 
       sanitizeRequest();

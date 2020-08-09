@@ -1,5 +1,7 @@
 package replicalead;
 
+import java.io.IOException;
+
 public class ReplicaRequestProcessor {
 
   static String leaderResponse;
@@ -11,6 +13,9 @@ public class ReplicaRequestProcessor {
   private static final String NAME_REPLICA_LEAD = "REPLICA_LEADER";
   private static final int FRONT_END_PORT = 6000;
   private static final int REPLICA_MANAGER_PORT = 5000;
+
+  private static int downedCounterROne = 0;
+  private static int downedCounterRTwo = 0;
 
   protected static void verifyConsistentResults() {
     if (leaderResponse != null && replicaOneResponse != null && replicaTwoResponse != null) {
@@ -71,7 +76,41 @@ public class ReplicaRequestProcessor {
       System.out
           .println("Sending Datagram to Replica Manager... - " + inconsistenReplicaIdentifier);
       MainUDPThread.sendPacket(inconsistenReplicaIdentifier, REPLICA_MANAGER_PORT);
+
+      if (inconsistenReplicaIdentifier.contains("REPLICA_ONE"))
+        downedCounterROne++;
+      else if (inconsistenReplicaIdentifier.contains("REPLICA_TWO"))
+        downedCounterRTwo++;
+
+      if (downedCounterROne == 3 || downedCounterRTwo == 3)
+        synchronizeStateWithDownedReplica(inconsistenReplicaIdentifier);
     }
+  }
+
+  private static void synchronizeStateWithDownedReplica(String inconsistenReplicaIdentifier) {
+    System.out.println("Synchronizing Replica Group State...");
+    try {
+      Thread.sleep(1200);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+    for (String dg : MainUDPThread.receivedDatagrams) {
+      String[] badReplicaList = inconsistenReplicaIdentifier.split(MSG_SEP);
+      String reqMessage =
+          badReplicaList[0] + MSG_SEP + String.format("%s_REPLAY/", badReplicaList[1]) + dg;
+      System.out.printf("Synchronizing to %s.. -- %s", badReplicaList[1], reqMessage);
+      try {
+        MainUDPThread.sendMulticastToReplicaGroups(reqMessage);
+      } catch (IOException e) {
+        e.printStackTrace();
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+    }
+    if (inconsistenReplicaIdentifier.contains("REPLICA_ONE"))
+      downedCounterROne = 0;
+    else if (inconsistenReplicaIdentifier.contains("REPLICA_TWO"))
+      downedCounterRTwo = 0;
   }
 
   private static void sanitizeResponse(String[] leaderResponseParts) {
