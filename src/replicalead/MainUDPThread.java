@@ -76,28 +76,6 @@ public class MainUDPThread extends Thread {
       throws InvalidName, ServantAlreadyActive, WrongPolicy, ObjectNotActive, FileNotFoundException,
       AdapterInactive, IOException, InterruptedException {
     switch (requestSender) {
-      case "FRONT_END":
-        System.out.println("Receiving Datagram from Front End...");
-        RequestProcessor requestProcessorFE = new RequestProcessor();
-        ReplicaRequestProcessor.requestProcessed = false;
-        if (extractedDatagram != "") {
-          String multicastDatagramData = NAME_REPLICA_LEAD + MSG_SEP + extractedDatagram;
-          receivedDatagrams.add(extractedDatagram);
-          System.out.println("Datagram Data sent to Front End - " + multicastDatagramData);
-          ReplicaRequestProcessor.leaderResponse =
-              requestProcessorFE.performORBAction(extractedDatagram);
-          sendMulticastToReplicaGroups(multicastDatagramData);
-        }
-        requestProcessorFE = null;
-        extractedDatagram = "";
-        break;
-
-      case "REPLICA_MANAGER":
-        System.out.println("Receiving Datagram from Replica Manager... - " + extractedDatagram);
-        RequestProcessor requestProcessorRM = new RequestProcessor();
-        requestProcessorRM.ProcessRMRequests(extractedDatagram);
-        extractedDatagram = "";
-        break;
 
       case "REPLICA_ONE":
         System.out.println("Receiving Datagram from Replica 1... - " + extractedDatagram);
@@ -120,10 +98,34 @@ public class MainUDPThread extends Thread {
         extractedDatagram = "";
         break;
 
+      case "FRONT_END":
+        System.out.println("Receiving Datagram from Front End...");
+        RequestProcessor requestProcessorFE = new RequestProcessor();
+        ReplicaRequestProcessor.requestProcessed = false;
+        if (extractedDatagram != "") {
+          String multicastDatagramData = NAME_REPLICA_LEAD + MSG_SEP + extractedDatagram;
+          receivedDatagrams.add(extractedDatagram);
+          System.out.println("Datagram Data sent to Front End - " + multicastDatagramData);
+          ReplicaRequestProcessor.leaderResponse =
+              requestProcessorFE.performORBAction(extractedDatagram);
+          sendMulticastToReplicaGroups(multicastDatagramData);
+        }
+        requestProcessorFE = null;
+        extractedDatagram = "";
+        break;
+
+      case "REPLICA_MANAGER":
+        System.out.println("Receiving Datagram from Replica Manager... - " + extractedDatagram);
+        RequestProcessor requestProcessorRM = new RequestProcessor();
+        requestProcessorRM.processRequestsFromReplicaManager(extractedDatagram);
+        extractedDatagram = "";
+        break;
+
       default:
         System.out.println("ERR: Sender is UNKNOWN.");
         break;
     }
+
   }
 
   public static boolean sendPacket(String requestData, int port) {

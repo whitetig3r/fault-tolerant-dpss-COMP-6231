@@ -103,22 +103,33 @@ class ReplicaManagerListenUDPThread extends Thread {
 
   private boolean setORBreference(String ipAddress) throws IOException {
     ORB orb = ORB.init(new String[1], null);
-    BufferedReader bufferedReader;
-    if (ipAddress.length() >= 3 && ipAddress.substring(0, 3).equals("132")) {
-      bufferedReader = new BufferedReader(new FileReader("NAORBFile.txt"));
-    } else if (ipAddress.length() >= 2 && ipAddress.substring(0, 2).equals("93")) {
-      bufferedReader = new BufferedReader(new FileReader("EUORBFile.txt"));
-    } else if (ipAddress.length() >= 3 && ipAddress.substring(0, 3).equals("182")) {
-      bufferedReader = new BufferedReader(new FileReader("ASORBFile.txt"));
-    } else {
-      System.out.println("ERR: Unknown Region");
-      return false;
+    BufferedReader bufferedReader = null;
+
+    if (ipAddress.length() >= 3) {
+      switch (ipAddress.substring(0, 3)) {
+        case "132": {
+          bufferedReader = new BufferedReader(new FileReader("NAORBFile.txt"));
+          break;
+        }
+        case "93.": {
+          bufferedReader = new BufferedReader(new FileReader("EUORBFile.txt"));
+          break;
+        }
+        case "182": {
+          bufferedReader = new BufferedReader(new FileReader("ASORBFile.txt"));
+          break;
+        }
+        default: {
+          System.out.println("ERR: Unknown Region");
+          return false;
+        }
+      }
     }
+
     String stringORB = bufferedReader.readLine();
     bufferedReader.close();
     org.omg.CORBA.Object reference_CORBA = orb.string_to_object(stringORB);
     gameServerReference = GameServerHelper.narrow(reference_CORBA);
-
     orb = null;
     stringORB = null;
     bufferedReader = null;
@@ -232,22 +243,33 @@ class MainUDPThread extends Thread {
 
   private boolean setORBreference(String ipAddress) throws IOException {
     ORB orb = ORB.init(new String[1], null);
-    BufferedReader bufferedReader;
-    if (ipAddress.length() >= 3 && ipAddress.substring(0, 3).equals(PREFIX_NA)) {
-      bufferedReader = new BufferedReader(new FileReader(R1_NA_NAME + "ORBFile.txt"));
-    } else if (ipAddress.length() >= 2 && ipAddress.substring(0, 2).equals(PREFIX_EU)) {
-      bufferedReader = new BufferedReader(new FileReader(R1_EU_NAME + "ORBFile.txt"));
-    } else if (ipAddress.length() >= 3 && ipAddress.substring(0, 3).equals(PREFIX_AS)) {
-      bufferedReader = new BufferedReader(new FileReader(R1_AS_NAME + "ORBFile.txt"));
-    } else {
-      System.out.println("Unknown Region");
-      return false;
+    BufferedReader bufferedReader = null;
+
+    if (ipAddress.length() >= 3) {
+      switch (ipAddress.substring(0, 3)) {
+        case "132": {
+          bufferedReader = new BufferedReader(new FileReader("NAORBFile.txt"));
+          break;
+        }
+        case "93.": {
+          bufferedReader = new BufferedReader(new FileReader("EUORBFile.txt"));
+          break;
+        }
+        case "182": {
+          bufferedReader = new BufferedReader(new FileReader("ASORBFile.txt"));
+          break;
+        }
+        default: {
+          System.out.println("ERR: Unknown Region");
+          return false;
+        }
+      }
     }
+
     String stringORB = bufferedReader.readLine();
     bufferedReader.close();
     org.omg.CORBA.Object reference_CORBA = orb.string_to_object(stringORB);
     gameServerReference = GameServerHelper.narrow(reference_CORBA);
-
     orb = null;
     stringORB = null;
     bufferedReader = null;
