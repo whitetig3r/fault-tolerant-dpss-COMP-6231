@@ -19,8 +19,8 @@ import org.omg.PortableServer.POA;
 import org.omg.PortableServer.POAHelper;
 
 public class GameServerFrontEnd extends GameServerPOA implements Runnable {
-  private final int FRONT_END_PORT = 6000;
-  private final int REPLICA_LEAD_PORT = 4000;
+  private final int FRONT_END_PORT = 6543;
+  private final int REPLICA_LEAD_PORT = 4321;
 
   private static enum ACTION_TO_PERFORM {
     PLAYER_CREATE_ACCOUNT, PLAYER_SIGN_IN, PLAYER_SIGN_OUT, PLAYER_TRANSFER_ACCOUNT, ADMIN_SIGN_IN, ADMIN_SIGN_OUT, ADMIN_GET_PLAYER_STATUS, ADMIN_SUSPEND_PLAYER_ACCOUNT
@@ -94,7 +94,7 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
 
       org.omg.CORBA.Object ref = rootpoa.id_to_reference(objectId);
       String stringifiedORB = orb.object_to_string(ref);
-      PrintWriter file = new PrintWriter("FRONT_END" + "_IOR.txt");
+      PrintWriter file = new PrintWriter("FRONT_END" + "ORBFile.txt");
       file.print(stringifiedORB);
       file.close();
 
@@ -128,7 +128,7 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
       tempList.add("FRONT_END");
       tempList.add(action.name());
       tempList.addAll(argList);
-      data = tempList.stream().map(String::valueOf).collect(Collectors.joining("/"));
+      data = tempList.stream().map(String::valueOf).collect(Collectors.joining("%"));
 
       message = data.getBytes();
       requestToReplicaLeader = new DatagramPacket(message, data.length(), host, REPLICA_LEAD_PORT);

@@ -29,7 +29,7 @@ public class GameServerNA extends Thread {
 
       String ior = orb.object_to_string(ref);
 
-      PrintWriter file = new PrintWriter("ior_NorthAmerica.txt");
+      PrintWriter file = new PrintWriter("NAORBReplicaLead.txt");
       file.println(ior);
       file.close();
       GameServer href = GameServerHelper.narrow(ref);

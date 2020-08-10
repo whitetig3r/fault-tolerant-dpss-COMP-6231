@@ -13,10 +13,10 @@ import org.omg.PortableServer.POAPackage.WrongPolicy;
 public class RequestProcessor {
 
   private static enum ACTION_TO_PERFORM {
-    PLAYER_CREATE_ACCOUNT, PLAYER_SIGN_IN, PLAYER_SIGN_OUT, PLAYER_TRANSFER_ACCOUNT, ADMIN_SIGN_IN, ADMIN_SIGN_OUT, ADMIN_GET_PLAYER_STATUS, ADMIN_SUSPEND_PLAYER_ACCOUNT, RESTART_REPLICA
+    PLAYER_CREATE_ACCOUNT, PLAYER_SIGN_IN, PLAYER_SIGN_OUT, PLAYER_TRANSFER_ACCOUNT, ADMIN_SIGN_IN, ADMIN_SIGN_OUT, ADMIN_GET_PLAYER_STATUS, ADMIN_SUSPEND_PLAYER_ACCOUNT, REPLACE_REPLICA
   }
 
-  private static final String MSG_SEP = "/";
+  private static final String MSG_SEP = "%";
   private static final String nullGameServerError = "ERR: GameServer does not exist!";
   private static final String insufficientParametersError =
       "ERR: Wrong number of parameters in this list!";
@@ -29,7 +29,7 @@ public class RequestProcessor {
       if ("132".equals(ipAddress.substring(0, 3))) {
         ORB orb = ORB.init(args, null);
 
-        BufferedReader br = new BufferedReader(new FileReader("ior_NorthAmerica.txt"));
+        BufferedReader br = new BufferedReader(new FileReader("NAORBReplicaLead.txt"));
         String ior = br.readLine();
         br.close();
 
@@ -40,7 +40,7 @@ public class RequestProcessor {
       else if ("93".equals(ipAddress.substring(0, 2))) {
         ORB orb = ORB.init(args, null);
 
-        BufferedReader br = new BufferedReader(new FileReader("ior_Europe.txt"));
+        BufferedReader br = new BufferedReader(new FileReader("EUORBReplicaLead.txt"));
         String ior = br.readLine();
         br.close();
 
@@ -51,7 +51,7 @@ public class RequestProcessor {
       else if ("182".equals(ipAddress.substring(0, 3))) {
         ORB orb = ORB.init(args, null);
 
-        BufferedReader br = new BufferedReader(new FileReader("ior_Asia.txt"));
+        BufferedReader br = new BufferedReader(new FileReader("ASORBReplicaLead.txt"));
         String ior = br.readLine();
         br.close();
 
@@ -72,7 +72,7 @@ public class RequestProcessor {
 
   protected String performORBAction(String requestAction) throws InvalidName, ServantAlreadyActive,
       WrongPolicy, ObjectNotActive, FileNotFoundException, AdapterInactive {
-    String requestParameterList[] = requestAction.split("/");
+    String requestParameterList[] = requestAction.split("%");
 
     sanitizeRequestParameterList(requestParameterList);
 
@@ -226,7 +226,7 @@ public class RequestProcessor {
   protected void ProcessRMRequests(String requestFromReplicaManager) {
     String parameterList[] = requestFromReplicaManager.split(MSG_SEP);
 
-    if (parameterList[0].substring(0, 15).equals("RESTART_REPLICA")) {
+    if (parameterList[0].substring(0, 15).equals("REPLACE_REPLICA")) {
       System.out.println("Starting Replica LEAD...");
       GameServerNA naGameServer = new GameServerNA();
       GameServerEU euGameServer = new GameServerEU();

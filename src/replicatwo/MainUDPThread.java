@@ -37,14 +37,14 @@ class ReplicaManagerListenUDPThread extends Thread {
   private byte[] buffer;
   private String[] parameterList;
 
-  private final String MSG_SEP = "/";
+  private final String MSG_SEP = "%";
   private int UDP_BUFFER_SIZE = 1200;
   protected static String BREAKER_IDENTIFIER = "REPLICA_BREAKER";
   private static final String REPLICA_MANAGER_IDENTIFIER = "REPLICA_MANAGER";
   protected static int REPLICA_BREAKER_PORT = 9393;
 
   private enum ACTION_TO_PERFORM {
-    PLAYER_CREATE_ACCOUNT, PLAYER_SIGN_IN, PLAYER_SIGN_OUT, PLAYER_TRANSFER_ACCOUNT, ADMIN_SIGN_IN, ADMIN_SIGN_OUT, ADMIN_GET_PLAYER_STATUS, ADMIN_SUSPEND_PLAYER_ACCOUNT, RESTART_REPLICA
+    PLAYER_CREATE_ACCOUNT, PLAYER_SIGN_IN, PLAYER_SIGN_OUT, PLAYER_TRANSFER_ACCOUNT, ADMIN_SIGN_IN, ADMIN_SIGN_OUT, ADMIN_GET_PLAYER_STATUS, ADMIN_SUSPEND_PLAYER_ACCOUNT, REPLACE_REPLICA
   }
 
   protected ReplicaManagerListenUDPThread(int port) throws SocketException {
@@ -80,7 +80,7 @@ class ReplicaManagerListenUDPThread extends Thread {
       parameterList = (new String(requestFromReplicaManager.getData())).split(MSG_SEP);
       if (parameterList[0].equals(REPLICA_MANAGER_IDENTIFIER)) {
         parameterList[1] = parameterList[1].trim();
-        if (parameterList[1].equals(ACTION_TO_PERFORM.RESTART_REPLICA.name())) {
+        if (parameterList[1].equals(ACTION_TO_PERFORM.REPLACE_REPLICA.name())) {
           listenerRestartNeeded = true;
         }
       } else if (parameterList[0].equals(BREAKER_IDENTIFIER)) {
@@ -105,11 +105,11 @@ class ReplicaManagerListenUDPThread extends Thread {
     ORB orb = ORB.init(new String[1], null);
     BufferedReader bufferedReader;
     if (ipAddress.length() >= 3 && ipAddress.substring(0, 3).equals("132")) {
-      bufferedReader = new BufferedReader(new FileReader("NA_BIOR.txt"));
+      bufferedReader = new BufferedReader(new FileReader("NAORBTwoFile.txt"));
     } else if (ipAddress.length() >= 2 && ipAddress.substring(0, 2).equals("93")) {
-      bufferedReader = new BufferedReader(new FileReader("EU_BIOR.txt"));
+      bufferedReader = new BufferedReader(new FileReader("EUORBTwoFile.txt"));
     } else if (ipAddress.length() >= 3 && ipAddress.substring(0, 3).equals("182")) {
-      bufferedReader = new BufferedReader(new FileReader("AS_BIOR.txt"));
+      bufferedReader = new BufferedReader(new FileReader("ASORBTwoFile.txt"));
     } else {
       System.out.println("ERR: Unknown Region");
       return false;
@@ -152,7 +152,7 @@ class ReplicaManagerListenUDPThread extends Thread {
 
 class MainUDPThread extends Thread {
 
-  private final String MSG_SEP = "/";
+  private final String MSG_SEP = "%";
   private int UDP_BUFFER_SIZE = 1200;
   private static MainUDPThread replicaTwo;
   private GameServer gameServerReference;
@@ -171,20 +171,20 @@ class MainUDPThread extends Thread {
   private String data;
   protected ReplicaManagerListenUDPThread replicaManagerListener;
 
-  protected static int REPLICA_TWO_PORT = 3000;
+  protected static int REPLICA_TWO_PORT = 3333;
 
   protected static String REPLICA_MANAGER_IDENTIFIER = "REPLICA_MANAGER";
   protected static String REPLICA_LEADER_IDENTIFIER = "REPLICA_LEADER";
   protected static String REPLICA_TWO_IDENTIFIER = "REPLICA_TWO";
-  protected static String UDP_END_PARSE = "$";
+  protected static String UDP_END_PARSE = "#";
   protected static String R2_NA_NAME = "NA";
   protected static String R2_EU_NAME = "EU";
   protected static String R2_AS_NAME = "AS";
-  protected static int REPLICA_LEAD_PORT = 4000;
+  protected static int REPLICA_LEAD_PORT = 4321;
 
-  protected static int REPLICA_LEAD_MULTICAST_PORT = 4446;
+  protected static int REPLICA_LEAD_MULTICAST_PORT = 10105;
 
-  protected static String MULTICAST_IP_ADDR = "224.0.0.2";
+  protected static String MULTICAST_IP_ADDR = "225.1.1.10";
 
   protected static String PREFIX_NA = "132";
   protected static String PREFIX_EU = "93";
@@ -234,11 +234,11 @@ class MainUDPThread extends Thread {
     ORB orb = ORB.init(new String[1], null);
     BufferedReader bufferedReader;
     if (ipAddress.length() >= 3 && ipAddress.substring(0, 3).equals(PREFIX_NA)) {
-      bufferedReader = new BufferedReader(new FileReader(R2_NA_NAME + "_BIOR.txt"));
+      bufferedReader = new BufferedReader(new FileReader(R2_NA_NAME + "ORBTwoFile.txt"));
     } else if (ipAddress.length() >= 2 && ipAddress.substring(0, 2).equals(PREFIX_EU)) {
-      bufferedReader = new BufferedReader(new FileReader(R2_EU_NAME + "_BIOR.txt"));
+      bufferedReader = new BufferedReader(new FileReader(R2_EU_NAME + "ORBTwoFile.txt"));
     } else if (ipAddress.length() >= 3 && ipAddress.substring(0, 3).equals(PREFIX_AS)) {
-      bufferedReader = new BufferedReader(new FileReader(R2_AS_NAME + "_BIOR.txt"));
+      bufferedReader = new BufferedReader(new FileReader(R2_AS_NAME + "ORBTwoFile.txt"));
     } else {
       System.out.println("Unknown Region");
       return false;

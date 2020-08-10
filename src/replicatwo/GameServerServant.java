@@ -869,11 +869,11 @@ public class GameServerServant extends GameServerPOA implements Runnable {
       org.omg.CORBA.Object reference_CORBA = rootPOA.id_to_reference(id);
       // Write the CORBA object to a file
       String stringORB = orb.object_to_string(reference_CORBA);
-      PrintWriter file = new PrintWriter(gameServerLocation + "_BIOR.txt");
+      PrintWriter file = new PrintWriter(gameServerLocation + "ORBTwoFile.txt");
       file.print(stringORB);
       file.close();
       rootPOA.the_POAManager().activate();
-      System.out.println("ORB init completed with file " + gameServerLocation + "_BIOR.txt");
+      System.out.println("ORB init completed with file " + gameServerLocation + "ORBTwoFile.txt");
     } catch (ServantAlreadyActive | WrongPolicy | ObjectNotActive | FileNotFoundException
         | AdapterInactive | org.omg.CORBA.ORBPackage.InvalidName e) {
       System.out.println("ORB Creation Error: " + e.getMessage());

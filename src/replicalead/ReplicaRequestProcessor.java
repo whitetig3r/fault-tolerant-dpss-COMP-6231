@@ -9,9 +9,9 @@ public class ReplicaRequestProcessor {
   static String replicaTwoResponse;
   static boolean requestProcessed;
   private static int replicaResponsePendingCounter;
-  private static final String MSG_SEP = "/";
+  private static final String MSG_SEP = "%";
   private static final String NAME_REPLICA_LEAD = "REPLICA_LEADER";
-  private static final int FRONT_END_PORT = 6000;
+  private static final int FRONT_END_PORT = 6543;
   private static final int REPLICA_MANAGER_PORT = 5000;
 
   private static int downedCounterROne = 0;
@@ -26,7 +26,7 @@ public class ReplicaRequestProcessor {
       }
 
       System.out.println("Validating all responses are consistent...");
-      String leaderResponseWithSep = leaderResponse + "/" + "$";
+      String leaderResponseWithSep = leaderResponse + "%" + "#";
       String leaderResponseParts[] = leaderResponseWithSep.split(MSG_SEP);
       String replicaOneResponseParts[] = replicaOneResponse.split(MSG_SEP);
       String replicaTwoResponseParts[] = replicaTwoResponse.split(MSG_SEP);

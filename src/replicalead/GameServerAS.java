@@ -28,7 +28,7 @@ public class GameServerAS extends Thread {
 
       String ior = orb.object_to_string(ref);
 
-      PrintWriter file = new PrintWriter("ior_Asia.txt");
+      PrintWriter file = new PrintWriter("ASORBReplicaLead.txt");
       file.println(ior);
       file.close();
 

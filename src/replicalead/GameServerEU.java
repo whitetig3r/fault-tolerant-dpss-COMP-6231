@@ -28,7 +28,7 @@ public class GameServerEU extends Thread {
 
       String ior = orb.object_to_string(ref);
 
-      PrintWriter file = new PrintWriter("ior_Europe.txt");
+      PrintWriter file = new PrintWriter("EUORBReplicaLead.txt");
       file.println(ior);
       file.close();
 

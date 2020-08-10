@@ -14,9 +14,9 @@ public class ReplicaManager {
   private static DatagramSocket aSocket = null;
   private static boolean holdConn = true;
   static int parserPosition = 0;
-  private static final int REPLICA_ONE_PORT = 2000;
-  private static final int REPLICA_TWO_PORT = 3000;
-  private static final int REPLICA_LEAD_PORT = 4000;
+  private static final int REPLICA_ONE_PORT = 2222;
+  private static final int REPLICA_TWO_PORT = 3333;
+  private static final int REPLICA_LEAD_PORT = 4321;
   private static final int REPLICA_MANAGER_PORT = 5000;
   private static int UDP_BUFFER_SIZE = 1200;
   private final static String REPLICA_MANAGER_IDENTIFIER = "REPLICA_MANAGER";
@@ -27,7 +27,7 @@ public class ReplicaManager {
   private static int replicaTwoCounter = 0;
 
   private static enum ACTION_TO_PERFORM {
-    PLAYER_CREATE_ACCOUNT, PLAYER_SIGN_IN, PLAYER_SIGN_OUT, PLAYER_TRANSFER_ACCOUNT, ADMIN_SIGN_IN, ADMIN_SIGN_OUT, ADMIN_GET_PLAYER_STATUS, ADMIN_SUSPEND_PLAYER_ACCOUNT, RESTART_REPLICA
+    PLAYER_CREATE_ACCOUNT, PLAYER_SIGN_IN, PLAYER_SIGN_OUT, PLAYER_TRANSFER_ACCOUNT, ADMIN_SIGN_IN, ADMIN_SIGN_OUT, ADMIN_GET_PLAYER_STATUS, ADMIN_SUSPEND_PLAYER_ACCOUNT, REPLACE_REPLICA
   }
 
   private ReplicaManager() {
@@ -48,7 +48,7 @@ public class ReplicaManager {
         DatagramPacket request = new DatagramPacket(buffer, buffer.length);
         aSocket.receive(request);
         requestData = new String(request.getData());
-        parameterList = requestData.split("/");
+        parameterList = requestData.split("%");
         if (parameterList[0].equals(REPLICA_LEAD_IDENTIFIER)) {
           handleInconsistentReplicaGroup();
         }
@@ -87,7 +87,7 @@ public class ReplicaManager {
     int UDPcommunicationPort = portNumber;
     DatagramSocket aSocket = null;
     String requestReplicaManagerMessage =
-        REPLICA_MANAGER_IDENTIFIER + "/" + ACTION_TO_PERFORM.RESTART_REPLICA.name();
+        REPLICA_MANAGER_IDENTIFIER + "%" + ACTION_TO_PERFORM.REPLACE_REPLICA.name();
 
     try {
       aSocket = new DatagramSocket();
@@ -113,7 +113,7 @@ public class ReplicaManager {
     DatagramSocket aSocket = null;
     boolean response = true;
     String requestReplicaManagerMessage =
-        REPLICA_MANAGER_IDENTIFIER + "/" + ACTION_TO_PERFORM.RESTART_REPLICA.name();
+        REPLICA_MANAGER_IDENTIFIER + "%" + ACTION_TO_PERFORM.REPLACE_REPLICA.name();
 
     try {
       aSocket = new DatagramSocket();

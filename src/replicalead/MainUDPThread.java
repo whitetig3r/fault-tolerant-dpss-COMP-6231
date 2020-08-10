@@ -17,10 +17,10 @@ import org.omg.PortableServer.POAPackage.WrongPolicy;
 
 
 public class MainUDPThread extends Thread {
-  private static final int REPLICA_LEAD_PORT = 4000;
-  private static final int REPLICA_LEAD_MULTICAST_PORT = 4446;
-  private static final String REPLICA_COMMUNICATION_MULTICAST_ADDR = "224.0.0.2";
-  private static final String MSG_SEP = "/";
+  private static final int REPLICA_LEAD_PORT = 4321;
+  private static final int REPLICA_LEAD_MULTICAST_PORT = 10105;
+  private static final String REPLICA_COMMUNICATION_MULTICAST_ADDR = "225.1.1.10";
+  private static final String MSG_SEP = "%";
   private static final int BUFFER_SIZE = 1200;
   private static final String NAME_REPLICA_LEAD = "REPLICA_LEADER";
   private String extractedDatagram;
@@ -81,14 +81,12 @@ public class MainUDPThread extends Thread {
         RequestProcessor requestProcessorFE = new RequestProcessor();
         ReplicaRequestProcessor.requestProcessed = false;
         if (extractedDatagram != "") {
-
           String multicastDatagramData = NAME_REPLICA_LEAD + MSG_SEP + extractedDatagram;
           receivedDatagrams.add(extractedDatagram);
           System.out.println("Datagram Data sent to Front End - " + multicastDatagramData);
           ReplicaRequestProcessor.leaderResponse =
               requestProcessorFE.performORBAction(extractedDatagram);
           sendMulticastToReplicaGroups(multicastDatagramData);
-
         }
         requestProcessorFE = null;
         extractedDatagram = "";

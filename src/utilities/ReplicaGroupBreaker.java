@@ -23,10 +23,10 @@ public class ReplicaGroupBreaker {
     while (true) {
       String inp = keyb.nextLine();
       if (inp.trim().equals("1")) {
-        port = 2000;
+        port = 2222;
         break;
       } else if (inp.trim().equals("2")) {
-        port = 3000;
+        port = 3333;
         break;
       }
       System.out.println("Invalid choice! Enter a valid option:");

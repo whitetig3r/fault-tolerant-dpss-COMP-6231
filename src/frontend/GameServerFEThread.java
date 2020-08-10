@@ -34,7 +34,7 @@ public class GameServerFEThread extends Thread {
       try {
         request = new DatagramPacket(buffer, buffer.length);
         frontEndSocket.receive(request);
-        parameterList = (new String(request.getData())).split("/");
+        parameterList = (new String(request.getData())).split("%");
         if (parameterList[0].equals("REPLICA_LEADER")) {
           GameServerORBThread.setConfimation(parameterList[1]);
           GameServerORBThread.setLeaderResponded(true);
