@@ -105,7 +105,8 @@ public class MainUDPThread extends Thread {
         if (extractedDatagram != "") {
           String multicastDatagramData = NAME_REPLICA_LEAD + MSG_SEP + extractedDatagram;
           receivedDatagrams.add(extractedDatagram);
-          System.out.println("Datagram Data sent to Front End - " + multicastDatagramData);
+          System.out
+              .println("Datagram Data multicasted to replica groups - " + multicastDatagramData);
           ReplicaRequestProcessor.leaderResponse =
               requestProcessorFE.performORBAction(extractedDatagram);
           sendMulticastToReplicaGroups(multicastDatagramData);
@@ -119,6 +120,9 @@ public class MainUDPThread extends Thread {
         RequestProcessor requestProcessorRM = new RequestProcessor();
         requestProcessorRM.processRequestsFromReplicaManager(extractedDatagram);
         extractedDatagram = "";
+        break;
+
+      case "SYNC":
         break;
 
       default:

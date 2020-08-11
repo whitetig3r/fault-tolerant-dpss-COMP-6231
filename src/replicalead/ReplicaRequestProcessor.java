@@ -47,7 +47,9 @@ public class ReplicaRequestProcessor {
       replicaResponsePendingCounter += 1;
     }
     if (replicaResponsePendingCounter == 2) {
-      String frontEndRequest = NAME_REPLICA_LEAD + MSG_SEP + leaderResponse;
+      String[] leaderResponseParts = leaderResponse.split(MSG_SEP);
+      String frontEndRequest = NAME_REPLICA_LEAD + MSG_SEP + leaderResponse + MSG_SEP
+          + leaderResponseParts[leaderResponseParts.length - 1];
       System.out.println("Sending datagram to Front End... - " + frontEndRequest);
       MainUDPThread.sendPacket(frontEndRequest, FRONT_END_PORT);
     }
@@ -96,8 +98,8 @@ public class ReplicaRequestProcessor {
     }
     for (String dg : MainUDPThread.receivedDatagrams) {
       String[] badReplicaList = inconsistenReplicaIdentifier.split(MSG_SEP);
-      String reqMessage =
-          badReplicaList[0] + MSG_SEP + String.format("%s_REPLAY/", badReplicaList[1]) + dg;
+      String reqMessage = badReplicaList[0] + MSG_SEP
+          + String.format("%s_REPLAY", badReplicaList[1]) + MSG_SEP + dg;
       System.out.printf("Synchronizing to %s.. -- %s", badReplicaList[1], reqMessage);
       try {
         MainUDPThread.sendMulticastToReplicaGroups(reqMessage);

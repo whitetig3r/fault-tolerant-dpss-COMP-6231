@@ -3,6 +3,7 @@ package replicalead;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.util.Arrays;
 import org.omg.CORBA.ORB;
 import org.omg.CORBA.ORBPackage.InvalidName;
 import org.omg.PortableServer.POAManagerPackage.AdapterInactive;
@@ -70,9 +71,13 @@ public class RequestProcessor {
     sanitizeRequestParameterList(requestParameterList);
 
     if (requestParameterList != null) {
+      String uuidForRequest = requestParameterList[requestParameterList.length - 1];
+      requestParameterList =
+          Arrays.copyOfRange(requestParameterList, 0, requestParameterList.length - 1);
       int parameterListLength = requestParameterList.length;
       ACTION_TO_PERFORM actionToPerform = ACTION_TO_PERFORM.valueOf(requestParameterList[0]);
-      return performRequestedAction(requestParameterList, parameterListLength, actionToPerform);
+      return performRequestedAction(requestParameterList, parameterListLength, actionToPerform,
+          uuidForRequest);
     }
     return "ERR";
   }
@@ -84,43 +89,43 @@ public class RequestProcessor {
   }
 
   private String performRequestedAction(String[] requestParameterList, int parameterListLength,
-      ACTION_TO_PERFORM actionToPerform) {
+      ACTION_TO_PERFORM actionToPerform, String uuidForRequest) {
     switch (actionToPerform) {
       case PLAYER_CREATE_ACCOUNT:
         return processAction(requestParameterList, 7, requestParameterList[5],
-            ACTION_TO_PERFORM.PLAYER_CREATE_ACCOUNT);
+            ACTION_TO_PERFORM.PLAYER_CREATE_ACCOUNT) + "%" + uuidForRequest;
 
       case PLAYER_SIGN_IN:
         return processAction(requestParameterList, 4, requestParameterList[3],
-            ACTION_TO_PERFORM.PLAYER_SIGN_IN);
+            ACTION_TO_PERFORM.PLAYER_SIGN_IN) + "%" + uuidForRequest;
 
       case PLAYER_SIGN_OUT:
         return processAction(requestParameterList, 3, requestParameterList[2],
-            ACTION_TO_PERFORM.PLAYER_SIGN_OUT);
+            ACTION_TO_PERFORM.PLAYER_SIGN_OUT) + "%" + uuidForRequest;
 
       case ADMIN_SIGN_IN:
         return processAction(requestParameterList, 3, requestParameterList[2],
-            ACTION_TO_PERFORM.ADMIN_SIGN_IN);
+            ACTION_TO_PERFORM.ADMIN_SIGN_IN) + "%" + uuidForRequest;
 
       case ADMIN_SIGN_OUT:
         return processAction(requestParameterList, 3, requestParameterList[2],
-            ACTION_TO_PERFORM.ADMIN_SIGN_OUT);
+            ACTION_TO_PERFORM.ADMIN_SIGN_OUT) + "%" + uuidForRequest;
 
       case PLAYER_TRANSFER_ACCOUNT:
         return processAction(requestParameterList, 5, requestParameterList[3],
-            ACTION_TO_PERFORM.PLAYER_TRANSFER_ACCOUNT);
+            ACTION_TO_PERFORM.PLAYER_TRANSFER_ACCOUNT) + "%" + uuidForRequest;
 
       case ADMIN_GET_PLAYER_STATUS:
         return processAction(requestParameterList, 4, requestParameterList[3],
-            ACTION_TO_PERFORM.ADMIN_GET_PLAYER_STATUS);
+            ACTION_TO_PERFORM.ADMIN_GET_PLAYER_STATUS) + "%" + uuidForRequest;
 
       case ADMIN_SUSPEND_PLAYER_ACCOUNT:
         return processAction(requestParameterList, 5, requestParameterList[3],
-            ACTION_TO_PERFORM.ADMIN_SUSPEND_PLAYER_ACCOUNT);
+            ACTION_TO_PERFORM.ADMIN_SUSPEND_PLAYER_ACCOUNT) + "%" + uuidForRequest;
 
       default:
         System.out.println("ERR: Unknown action requested");
-        return "ERR";
+        return "ERR" + "%" + uuidForRequest;
     }
   }
 

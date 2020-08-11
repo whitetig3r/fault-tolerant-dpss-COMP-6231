@@ -9,11 +9,10 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
-
 import org.omg.CORBA.ORB;
 import org.omg.PortableServer.POA;
 import org.omg.PortableServer.POAHelper;
@@ -26,7 +25,7 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
     PLAYER_CREATE_ACCOUNT, PLAYER_SIGN_IN, PLAYER_SIGN_OUT, PLAYER_TRANSFER_ACCOUNT, ADMIN_SIGN_IN, ADMIN_SIGN_OUT, ADMIN_GET_PLAYER_STATUS, ADMIN_SUSPEND_PLAYER_ACCOUNT
   }
 
-  private static Queue<List<Object>> fifoQueue;
+  private static ConcurrentLinkedQueue<List<Object>> fifoQueue;
   private static GameServerORBThread orbThread;
   private static GameServerFEThread udpThread;
   private DatagramSocket sendSocket;
@@ -36,7 +35,7 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
   private InetAddress host;
 
   private GameServerFrontEnd(String[] args) {
-    fifoQueue = new LinkedList<List<Object>>();
+    fifoQueue = new ConcurrentLinkedQueue<List<Object>>();
     try {
       sendSocket = new DatagramSocket();
       host = InetAddress.getByName("localhost");
@@ -146,110 +145,156 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
       String ipAddress, int age) {
     GameServerORBThread.setLeaderResponded(false);
     List<Object> tempList = new ArrayList<Object>();
+    UUID uuid = UUID.randomUUID();
+    String stringifiedUUID = uuid.toString();
     tempList.addAll(Arrays.asList(ACTION_TO_PERFORM.PLAYER_CREATE_ACCOUNT, fName, lName, uName,
-        password, ipAddress, age));
+        password, ipAddress, age, stringifiedUUID));
     fifoQueue.add(tempList);
     tempList = null;
-    while (!GameServerORBThread.hasLeaderResponded()) {
-      try {
-        Thread.sleep(200);
-      } catch (InterruptedException e) {
-        e.printStackTrace();
+    while (true) {
+      if (GameServerORBThread.responseHash.containsKey(stringifiedUUID)) {
+        break;
+      } else {
+        try {
+          Thread.sleep(200);
+          continue;
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
       }
     }
-    // LOG
-    return GameServerORBThread.getConfirmation();
+
+    return GameServerORBThread.responseHash.get(stringifiedUUID);
   }
 
   @Override
   public String playerSignIn(String uName, String password, String ipAddress) {
     GameServerORBThread.setLeaderResponded(false);
     List<Object> tempList = new ArrayList<Object>();
-    tempList.addAll(Arrays.asList(ACTION_TO_PERFORM.PLAYER_SIGN_IN, uName, password, ipAddress));
+    UUID uuid = UUID.randomUUID();
+    String stringifiedUUID = uuid.toString();
+    tempList.addAll(Arrays.asList(ACTION_TO_PERFORM.PLAYER_SIGN_IN, uName, password, ipAddress,
+        stringifiedUUID));
     fifoQueue.add(tempList);
     tempList = null;
-    while (!GameServerORBThread.hasLeaderResponded()) {
-      try {
-        Thread.sleep(200);
-      } catch (InterruptedException e) {
-        e.printStackTrace();
+    while (true) {
+      if (GameServerORBThread.responseHash.containsKey(stringifiedUUID)) {
+        break;
+      } else {
+        try {
+          Thread.sleep(200);
+          continue;
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
       }
     }
-    // LOG
-    return GameServerORBThread.getConfirmation();
+
+    return GameServerORBThread.responseHash.get(stringifiedUUID);
   }
 
   @Override
   public String playerSignOut(String uName, String ipAddress) {
     GameServerORBThread.setLeaderResponded(false);
     List<Object> tempList = new ArrayList<Object>();
-    tempList.addAll(Arrays.asList(ACTION_TO_PERFORM.PLAYER_SIGN_OUT, uName, ipAddress));
+    UUID uuid = UUID.randomUUID();
+    String stringifiedUUID = uuid.toString();
+    tempList.addAll(
+        Arrays.asList(ACTION_TO_PERFORM.PLAYER_SIGN_OUT, uName, ipAddress, stringifiedUUID));
     fifoQueue.add(tempList);
     tempList = null;
-    while (!GameServerORBThread.hasLeaderResponded()) {
-      try {
-        Thread.sleep(200);
-      } catch (InterruptedException e) {
-        e.printStackTrace();
+    while (true) {
+      if (GameServerORBThread.responseHash.containsKey(stringifiedUUID)) {
+        break;
+      } else {
+        try {
+          Thread.sleep(200);
+          continue;
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
       }
     }
-    // LOG
-    return GameServerORBThread.getConfirmation();
+
+    return GameServerORBThread.responseHash.get(stringifiedUUID);
   }
 
   @Override
   public String adminSignIn(String uName, String password, String ipAddress) {
     GameServerORBThread.setLeaderResponded(false);
     List<Object> tempList = new ArrayList<Object>();
-    tempList.addAll(Arrays.asList(ACTION_TO_PERFORM.ADMIN_SIGN_IN, uName, password, ipAddress));
+    UUID uuid = UUID.randomUUID();
+    String stringifiedUUID = uuid.toString();
+    tempList.addAll(Arrays.asList(ACTION_TO_PERFORM.ADMIN_SIGN_IN, uName, password, ipAddress,
+        stringifiedUUID));
     fifoQueue.add(tempList);
     tempList = null;
-    while (!GameServerORBThread.hasLeaderResponded()) {
-      try {
-        Thread.sleep(200);
-      } catch (InterruptedException e) {
-        e.printStackTrace();
+    while (true) {
+      if (GameServerORBThread.responseHash.containsKey(stringifiedUUID)) {
+        break;
+      } else {
+        try {
+          Thread.sleep(200);
+          continue;
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
       }
     }
-    // LOG
-    return GameServerORBThread.getConfirmation();
+
+    return GameServerORBThread.responseHash.get(stringifiedUUID);
   }
 
   @Override
   public String adminSignOut(String uName, String ipAddress) {
     GameServerORBThread.setLeaderResponded(false);
     List<Object> tempList = new ArrayList<Object>();
-    tempList.addAll(Arrays.asList(ACTION_TO_PERFORM.ADMIN_SIGN_OUT, uName, ipAddress));
+    UUID uuid = UUID.randomUUID();
+    String stringifiedUUID = uuid.toString();
+    tempList
+        .addAll(Arrays.asList(ACTION_TO_PERFORM.ADMIN_SIGN_OUT, uName, ipAddress, stringifiedUUID));
     fifoQueue.add(tempList);
     tempList = null;
-    while (!GameServerORBThread.hasLeaderResponded()) {
-      try {
-        Thread.sleep(200);
-      } catch (InterruptedException e) {
-        e.printStackTrace();
+    while (true) {
+      if (GameServerORBThread.responseHash.containsKey(stringifiedUUID)) {
+        break;
+      } else {
+        try {
+          Thread.sleep(200);
+          continue;
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
       }
     }
-    // LOG
-    return GameServerORBThread.getConfirmation();
+
+    return GameServerORBThread.responseHash.get(stringifiedUUID);
   }
 
   @Override
   public String getPlayerStatus(String uName, String password, String ipAddress) {
     GameServerORBThread.setLeaderResponded(false);
     List<Object> tempList = new ArrayList<Object>();
-    tempList.addAll(
-        Arrays.asList(ACTION_TO_PERFORM.ADMIN_GET_PLAYER_STATUS, uName, password, ipAddress));
+    UUID uuid = UUID.randomUUID();
+    String stringifiedUUID = uuid.toString();
+    tempList.addAll(Arrays.asList(ACTION_TO_PERFORM.ADMIN_GET_PLAYER_STATUS, uName, password,
+        ipAddress, stringifiedUUID));
     fifoQueue.add(tempList);
     tempList = null;
-    while (!GameServerORBThread.hasLeaderResponded()) {
-      try {
-        Thread.sleep(200);
-      } catch (InterruptedException e) {
-        e.printStackTrace();
+    while (true) {
+      if (GameServerORBThread.responseHash.containsKey(stringifiedUUID)) {
+        break;
+      } else {
+        try {
+          Thread.sleep(200);
+          continue;
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
       }
     }
-    // LOG
-    return GameServerORBThread.getConfirmation();
+
+    return GameServerORBThread.responseHash.get(stringifiedUUID);
   }
 
   @Override
@@ -257,19 +302,26 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
       String newIpAddress) {
     GameServerORBThread.setLeaderResponded(false);
     List<Object> tempList = new ArrayList<Object>();
+    UUID uuid = UUID.randomUUID();
+    String stringifiedUUID = uuid.toString();
     tempList.addAll(Arrays.asList(ACTION_TO_PERFORM.PLAYER_TRANSFER_ACCOUNT, uName, password,
-        oldIpAddress, newIpAddress));
+        oldIpAddress, newIpAddress, stringifiedUUID));
     fifoQueue.add(tempList);
     tempList = null;
-    while (!GameServerORBThread.hasLeaderResponded()) {
-      try {
-        Thread.sleep(200);
-      } catch (InterruptedException e) {
-        e.printStackTrace();
+    while (true) {
+      if (GameServerORBThread.responseHash.containsKey(stringifiedUUID)) {
+        break;
+      } else {
+        try {
+          Thread.sleep(200);
+          continue;
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
       }
     }
-    // LOG
-    return GameServerORBThread.getConfirmation();
+
+    return GameServerORBThread.responseHash.get(stringifiedUUID);
   }
 
   @Override
@@ -277,19 +329,25 @@ public class GameServerFrontEnd extends GameServerPOA implements Runnable {
       String uNameToSuspend) {
     GameServerORBThread.setLeaderResponded(false);
     List<Object> tempList = new ArrayList<Object>();
+    UUID uuid = UUID.randomUUID();
+    String stringifiedUUID = uuid.toString();
     tempList.addAll(Arrays.asList(ACTION_TO_PERFORM.ADMIN_SUSPEND_PLAYER_ACCOUNT, uName, password,
-        ipAddress, uNameToSuspend));
+        ipAddress, uNameToSuspend, stringifiedUUID));
     fifoQueue.add(tempList);
     tempList = null;
-    while (!GameServerORBThread.hasLeaderResponded()) {
-      try {
-        Thread.sleep(200);
-      } catch (InterruptedException e) {
-        e.printStackTrace();
+    while (true) {
+      if (GameServerORBThread.responseHash.containsKey(stringifiedUUID)) {
+        break;
+      } else {
+        try {
+          Thread.sleep(200);
+          continue;
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
       }
     }
-    // LOG
-    return GameServerORBThread.getConfirmation();
-  }
 
+    return GameServerORBThread.responseHash.get(stringifiedUUID);
+  }
 }

@@ -36,7 +36,7 @@ public class ReplicaGroupBreaker {
 
   private static void makeInvalidResultsOnReplica(int p_Port) {
     DatagramSocket aSocket = null;
-    String reqOp = "REPLICA_BREAKER/";
+    String reqOp = "REPLICA_BREAKER%";
     try {
       aSocket = new DatagramSocket();
       aSocket.setSoTimeout(5000);

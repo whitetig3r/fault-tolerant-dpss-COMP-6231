@@ -335,7 +335,7 @@ class MainUDPThread extends Thread {
       performAction();
   }
 
-  private void performAction() {
+  private synchronized void performAction() {
     try {
       buffer = new byte[UDP_BUFFER_SIZE];
       requestFromLeaderPacket = new DatagramPacket(buffer, buffer.length);
@@ -343,10 +343,13 @@ class MainUDPThread extends Thread {
       String resp = new String(requestFromLeaderPacket.getData());
       parameterList = resp.split(MSG_SEP);
 
+      boolean syncMode = false;
+
       for (int i = 0; i < parameterList.length; i++) {
         if (parameterList[i].equals("REPLICA_ONE_REPLAY")) {
           parameterList = Arrays.stream(parameterList)
               .filter(el -> !el.equals("REPLICA_ONE_REPLAY")).toArray(String[]::new);
+          syncMode = true;
           break;
         } else if (parameterList[i].equals("REPLICA_TWO_REPLAY"))
           return;
@@ -357,7 +360,7 @@ class MainUDPThread extends Thread {
       sanitizeRequest();
 
       if (parameterList[0].equals(REPLICA_LEADER_IDENTIFIER)) {
-        performRequestedAction();
+        performRequestedAction(syncMode);
         buffer = new byte[UDP_BUFFER_SIZE];
         buffer = data.getBytes();
         replyToLeaderPacket = new DatagramPacket(buffer, data.length(),
@@ -385,65 +388,73 @@ class MainUDPThread extends Thread {
     }
   }
 
-  private void performRequestedAction() throws IOException {
+  private void performRequestedAction(boolean syncMode) throws IOException {
     switch (parameterList[1]) {
       case "PLAYER_CREATE_ACCOUNT": {
         setORBreference(parameterList[6]);
         String orbResponse = gameServerReference.createPlayerAccount(parameterList[2],
             parameterList[3], parameterList[4], parameterList[5], parameterList[6],
             Integer.parseInt(parameterList[7]));
-        data = packageResponseForRL(orbResponse);
+        data = packageResponseForRL(orbResponse, syncMode);
         break;
       }
       case "PLAYER_SIGN_IN": {
         setORBreference(parameterList[4]);
         String orbResponse =
             gameServerReference.playerSignIn(parameterList[2], parameterList[3], parameterList[4]);
-        data = packageResponseForRL(orbResponse);
+        data = packageResponseForRL(orbResponse, syncMode);
         break;
       }
       case "PLAYER_SIGN_OUT": {
         setORBreference(parameterList[3]);
         String orbResponse = gameServerReference.playerSignOut(parameterList[2], parameterList[3]);
-        data = packageResponseForRL(orbResponse);
+        data = packageResponseForRL(orbResponse, syncMode);
         break;
       }
       case "ADMIN_SIGN_IN": {
         setORBreference(parameterList[4]);
         String orbResponse =
             gameServerReference.adminSignIn(parameterList[2], parameterList[3], parameterList[4]);
-        data = packageResponseForRL(orbResponse);
+        data = packageResponseForRL(orbResponse, syncMode);
         break;
       }
       case "ADMIN_SIGN_OUT": {
         setORBreference(parameterList[3]);
         String orbResponse = gameServerReference.adminSignOut(parameterList[2], parameterList[3]);
-        data = packageResponseForRL(orbResponse);
+        data = packageResponseForRL(orbResponse, syncMode);
       }
       case "PLAYER_TRANSFER_ACCOUNT": {
         setORBreference(parameterList[4]);
         String orbResponse = gameServerReference.transferAccount(parameterList[2], parameterList[3],
             parameterList[4], parameterList[5]);
-        data = packageResponseForRL(orbResponse);
+        data = packageResponseForRL(orbResponse, syncMode);
         break;
       }
       case "ADMIN_SUSPEND_PLAYER_ACCOUNT": {
         setORBreference(parameterList[4]);
         String orbResponse = gameServerReference.suspendAccount(parameterList[2], parameterList[3],
             parameterList[4], parameterList[5]);
-        data = packageResponseForRL(orbResponse);
+        data = packageResponseForRL(orbResponse, syncMode);
         break;
       }
       case "ADMIN_GET_PLAYER_STATUS": {
         setORBreference(parameterList[4]);
         data = packageResponseForRL(gameServerReference.getPlayerStatus(parameterList[2],
-            parameterList[3], parameterList[4]));
+            parameterList[3], parameterList[4]), syncMode);
         break;
       }
     }
   }
 
-  private String packageResponseForRL(String responseData) {
-    return REPLICA_ONE_IDENTIFIER + MSG_SEP + responseData + MSG_SEP + UDP_END_PARSE;
+  private String packageResponseForRL(String responseData, boolean syncMode) {
+    String sender;
+
+    if (!syncMode)
+      sender = REPLICA_ONE_IDENTIFIER;
+    else
+      sender = "SYNC";
+
+    return sender + MSG_SEP + responseData + MSG_SEP + parameterList[parameterList.length - 1]
+        + MSG_SEP + UDP_END_PARSE;
   }
 }

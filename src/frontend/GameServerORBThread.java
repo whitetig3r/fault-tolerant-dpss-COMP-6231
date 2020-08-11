@@ -1,5 +1,6 @@
 package frontend;
 
+import java.util.concurrent.ConcurrentHashMap;
 import org.omg.CORBA.ORB;
 
 public class GameServerORBThread extends Thread {
@@ -7,6 +8,8 @@ public class GameServerORBThread extends Thread {
   private static boolean receivedResponse;
   private static String confirmed;
   private static String leadResponse;
+
+  public static ConcurrentHashMap<String, String> responseHash = new ConcurrentHashMap<>();
 
   protected GameServerORBThread(ORB orb) {
     this.orb = orb;
