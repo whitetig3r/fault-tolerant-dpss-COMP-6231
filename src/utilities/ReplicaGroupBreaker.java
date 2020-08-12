@@ -34,7 +34,7 @@ public class ReplicaGroupBreaker {
     makeInvalidResultsOnReplica(port);
   }
 
-  private static void makeInvalidResultsOnReplica(int p_Port) {
+  private static void makeInvalidResultsOnReplica(int port) {
     DatagramSocket aSocket = null;
     String reqOp = "REPLICA_BREAKER%";
     try {
@@ -42,12 +42,12 @@ public class ReplicaGroupBreaker {
       aSocket.setSoTimeout(5000);
       byte[] m = reqOp.getBytes();
       InetAddress aHost = InetAddress.getByName("127.0.0.1");
-      DatagramPacket request = new DatagramPacket(m, reqOp.length(), aHost, p_Port);
+      DatagramPacket request = new DatagramPacket(m, reqOp.length(), aHost, port);
       aSocket.send(request);
-      System.out.println("Successfully initiated replicaGroup on port " + p_Port
+      System.out.println("Successfully initiated replicaGroup on port " + port
           + " corruption sequence on all three region servers!");
     } catch (SocketTimeoutException e) {
-      String timeOut = String.format("ERR: Request to server on port %d has timed out!", p_Port);
+      String timeOut = String.format("ERR: Request to server on port %d has timed out!", port);
       System.out.println(timeOut);
     } catch (SocketException e) {
       System.out.println("ERR: " + e.getMessage());
