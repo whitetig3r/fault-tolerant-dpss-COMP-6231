@@ -422,6 +422,7 @@ class MainUDPThread extends Thread {
         setORBreference(parameterList[3]);
         String orbResponse = gameServerReference.adminSignOut(parameterList[2], parameterList[3]);
         data = packageResponseForRL(orbResponse, syncMode);
+        break;
       }
       case "PLAYER_TRANSFER_ACCOUNT": {
         setORBreference(parameterList[4]);

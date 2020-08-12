@@ -104,7 +104,7 @@ public class RequestProcessor {
             ACTION_TO_PERFORM.PLAYER_SIGN_OUT) + "%" + uuidForRequest;
 
       case ADMIN_SIGN_IN:
-        return processAction(requestParameterList, 3, requestParameterList[2],
+        return processAction(requestParameterList, 4, requestParameterList[3],
             ACTION_TO_PERFORM.ADMIN_SIGN_IN) + "%" + uuidForRequest;
 
       case ADMIN_SIGN_OUT:

@@ -27,6 +27,7 @@ public class ReplicaRequestProcessor {
 
       System.out.println("Validating all responses are consistent...");
       String leaderResponseWithSep = leaderResponse + "%" + "#";
+      System.out.println("Leader Response -- " + leaderResponseWithSep);
       String leaderResponseParts[] = leaderResponseWithSep.split(MSG_SEP);
       String replicaOneResponseParts[] = replicaOneResponse.split(MSG_SEP);
       String replicaTwoResponseParts[] = replicaTwoResponse.split(MSG_SEP);

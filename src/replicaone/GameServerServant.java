@@ -20,7 +20,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,16 +30,13 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.omg.CORBA.ORB;
-import org.omg.CosNaming.NamingContextPackage.InvalidName;
 import org.omg.PortableServer.POA;
 import org.omg.PortableServer.POAHelper;
 import org.omg.PortableServer.POAManagerPackage.AdapterInactive;
 import org.omg.PortableServer.POAPackage.ObjectNotActive;
 import org.omg.PortableServer.POAPackage.ServantAlreadyActive;
 import org.omg.PortableServer.POAPackage.WrongPolicy;
-
 import exceptions.BadPasswordException;
 import exceptions.BadUserNameException;
 import exceptions.PlayerRemoveException;
@@ -451,9 +447,16 @@ public class GameServerServant extends GameServerPOA implements Runnable {
 
     if (uName.equals("Admin") && password.equals("Admin")) {
       try {
-        playerToSuspend = this.playerHash.get(uNameFirstChar).stream().filter(player -> {
-          return player.getuName().equals(uNameToSuspend);
-        }).findAny().orElse(null);
+        if (this.playerHash.containsKey(uNameFirstChar)) {
+          playerToSuspend = this.playerHash.get(uNameFirstChar).stream().filter(player -> {
+            return player.getuName().equals(uNameToSuspend);
+          }).findAny().orElse(null);
+        } else {
+          String noSuchPlayer = String
+              .format("ERR: Failed to find player account with username -- %s", uNameToSuspend);
+          serverLog(noSuchPlayer, ipAddress);
+          return noSuchPlayer;
+        }
 
         if (playerToSuspend != null) {
           playerToSuspend.acquireLock(); // LOCK
